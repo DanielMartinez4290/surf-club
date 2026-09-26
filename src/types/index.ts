@@ -24,6 +24,10 @@ export interface User {
   images: UserImages;
 }
 
+export type PublicUser = Pick<User, 'id' | 'first_name' | 'bio' | 'owner_or_rider' | 'images'> & {
+  age: number | null;
+};
+
 export interface SurfEvent {
   id: number;
   user_id: number;

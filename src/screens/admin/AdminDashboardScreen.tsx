@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BackButton } from '../../components/BackButton';
 import { Image } from 'expo-image';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
@@ -9,7 +10,7 @@ import { toApiError } from '../../api/client';
 import { colors, spacing, typography } from '../../theme';
 import type { User } from '../../types';
 
-export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
+export const AdminDashboardScreen = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [pushMessage, setPushMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -52,11 +53,9 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackButton />
       <View style={styles.header}>
         <Text style={styles.heading}>Admin Dashboard</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.close}>Close</Text>
-        </TouchableOpacity>
       </View>
 
       <View style={styles.pushSection}>
@@ -111,7 +110,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   heading: { ...typography.title, fontSize: 22 },
-  close: { color: colors.ocean, fontWeight: '600' },
   pushSection: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   sectionTitle: {
     ...typography.caption,

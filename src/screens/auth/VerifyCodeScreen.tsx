@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BackButton } from '../../components/BackButton';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button } from '../../components/Button';
 import { OtpCodeInput } from '../../components/OtpCodeInput';
@@ -45,6 +46,7 @@ export const VerifyCodeScreen = ({ navigation, route }: Props) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackButton />
       <View style={styles.content}>
         <Text style={styles.heading}>Enter the code</Text>
         <Text style={styles.subtext}>
@@ -52,12 +54,6 @@ export const VerifyCodeScreen = ({ navigation, route }: Props) => {
         </Text>
         <OtpCodeInput value={code} onChange={setCode} />
         <Button title="Verify" onPress={handleVerify} loading={loading} style={styles.spaced} />
-        <Button
-          title="Back"
-          variant="secondary"
-          onPress={() => navigation.goBack()}
-          style={styles.spaced}
-        />
       </View>
     </SafeAreaView>
   );
@@ -65,7 +61,7 @@ export const VerifyCodeScreen = ({ navigation, route }: Props) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.sand },
-  content: { padding: spacing.lg, paddingTop: spacing.xxl },
+  content: { padding: spacing.lg, paddingTop: spacing.md },
   heading: { ...typography.title },
   subtext: { ...typography.body, color: colors.slate, marginBottom: spacing.xl },
   spaced: { marginTop: spacing.md },

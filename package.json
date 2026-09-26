@@ -45,9 +45,12 @@
   },
   "scripts": {
     "start": "expo start",
+    "dev": "expo start --dev-client --ios",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "db:password": "aws secretsmanager get-secret-value --secret-id surf-club-atx-api/DB_PASSWORD --region us-east-1 --query SecretString --output text",
+    "db:tunnel":"aws ssm start-session --target i-0667b765ea308d425 --region us-east-1 --document-name AWS-StartPortForwardingSessionToRemoteHost --parameters '{\"host\":[\"172.18.0.2\"],\"portNumber\":[\"3306\"],\"localPortNumber\":[\"13306\"]}'"
   },
   "private": true
 }

@@ -1,7 +1,10 @@
 import { api } from './client';
-import type { User } from '../types';
+import type { PublicUser, User } from '../types';
 
 export const apiGetMe = () => api.post<User>('/api/user/get-user-data').then((r) => r.data);
+
+export const apiGetPublicProfile = (userId: number) =>
+  api.get<PublicUser>(`/api/user/${userId}`).then((r) => r.data);
 
 export const apiUpdateProfile = (params: Partial<User>) =>
   api.put<User>('/api/user/update', params).then((r) => r.data);

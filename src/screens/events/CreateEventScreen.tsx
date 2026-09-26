@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BackButton } from '../../components/BackButton';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
 import dayjs from 'dayjs';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
@@ -12,12 +12,12 @@ import { apiCreateEvent, apiUploadEventPhoto } from '../../api/events';
 import { toApiError } from '../../api/client';
 import { colors, radii, spacing, typography } from '../../theme';
 
-const EVENT_TYPES = ['Wake Surfing', 'Wakeboarding', 'Fishing', 'Social'];
+// This app is wake surfing only, so every outing gets this type.
+const EVENT_TYPE = 'Wake Surfing';
 
 export const CreateEventScreen = ({ navigation }: { navigation: any }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [eventType, setEventType] = useState(EVENT_TYPES[0]);
   const [location, setLocation] = useState('');
   const [pictureUrl, setPictureUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -58,7 +58,7 @@ export const CreateEventScreen = ({ navigation }: { navigation: any }) => {
       await apiCreateEvent({
         title,
         description,
-        event_type: eventType,
+        event_type: EVENT_TYPE,
         location,
         picture_url: pictureUrl,
         start_time: dayjs(startTime).format('YYYY-MM-DD HH:mm:ss'),
@@ -76,6 +76,7 @@ export const CreateEventScreen = ({ navigation }: { navigation: any }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackButton />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.heading}>New Outing</Text>
@@ -87,14 +88,6 @@ export const CreateEventScreen = ({ navigation }: { navigation: any }) => {
               <Text style={styles.imagePickerText}>{uploading ? 'Uploading...' : 'Add a photo'}</Text>
             )}
           </TouchableOpacity>
-
-          <View style={styles.pickerWrap}>
-            <Picker selectedValue={eventType} onValueChange={setEventType}>
-              {EVENT_TYPES.map((t) => (
-                <Picker.Item key={t} label={t} value={t} />
-              ))}
-            </Picker>
-          </View>
 
           <TextField label="Title" value={title} onChangeText={setTitle} />
           <TextField
@@ -136,12 +129,6 @@ export const CreateEventScreen = ({ navigation }: { navigation: any }) => {
           />
 
           <Button title="Create Outing" onPress={handleSave} loading={saving} style={styles.spaced} />
-          <Button
-            title="Cancel"
-            variant="secondary"
-            onPress={() => navigation.goBack()}
-            style={styles.spaced}
-          />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -165,13 +152,6 @@ const styles = StyleSheet.create({
   },
   image: { width: '100%', height: '100%' },
   imagePickerText: { color: colors.slate },
-  pickerWrap: {
-    backgroundColor: colors.white,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.md,
-  },
   dateButton: {
     height: 50,
     borderRadius: radii.sm,

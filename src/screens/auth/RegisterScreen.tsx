@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BackButton } from '../../components/BackButton';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
@@ -45,6 +46,7 @@ export const RegisterScreen = ({ navigation, route }: Props) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackButton />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={styles.heading}>Create your account</Text>
@@ -59,12 +61,6 @@ export const RegisterScreen = ({ navigation, route }: Props) => {
           />
           <TextField label="Password" secureTextEntry value={password} onChangeText={setPassword} />
           <Button title="Create Account" onPress={handleRegister} loading={loading} style={styles.spaced} />
-          <Button
-            title="Back"
-            variant="secondary"
-            onPress={() => navigation.goBack()}
-            style={styles.spaced}
-          />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -73,7 +69,7 @@ export const RegisterScreen = ({ navigation, route }: Props) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.sand },
-  content: { padding: spacing.lg, paddingTop: spacing.xxl },
+  content: { padding: spacing.lg, paddingTop: spacing.md },
   heading: { ...typography.title, marginBottom: spacing.lg },
   spaced: { marginTop: spacing.sm },
 });

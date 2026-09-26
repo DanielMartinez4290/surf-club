@@ -1,6 +1,8 @@
 export const colors = {
   ocean: '#0B5D66',
   oceanDark: '#08444B',
+  lake: '#1C6FB5',
+  lakeTint: 'rgba(28, 111, 181, 0.14)',
   coral: '#FF6B4A',
   sand: '#F6F1E7',
   ink: '#12242A',

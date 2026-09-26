@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BackButton } from '../../components/BackButton';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
@@ -32,6 +33,7 @@ export const LoginScreen = ({ navigation }: Props) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackButton />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={styles.heading}>Welcome back</Text>
@@ -44,12 +46,6 @@ export const LoginScreen = ({ navigation }: Props) => {
           />
           <TextField label="Password" secureTextEntry value={password} onChangeText={setPassword} />
           <Button title="Sign In" onPress={handleLogin} loading={loading} style={styles.spaced} />
-          <Button
-            title="Back"
-            variant="secondary"
-            onPress={() => navigation.goBack()}
-            style={styles.spaced}
-          />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -58,7 +54,7 @@ export const LoginScreen = ({ navigation }: Props) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.sand },
-  content: { padding: spacing.lg, paddingTop: spacing.xxl },
+  content: { padding: spacing.lg, paddingTop: spacing.md },
   heading: { ...typography.title, marginBottom: spacing.lg },
   spaced: { marginTop: spacing.sm },
 });

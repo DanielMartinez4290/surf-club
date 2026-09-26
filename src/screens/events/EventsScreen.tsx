@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import dayjs from 'dayjs';
+import { parseEventTime } from '../../utils/eventTime';
 import { apiGetEvents } from '../../api/events';
 import { colors, radii, spacing, typography } from '../../theme';
 import type { SurfEvent } from '../../types';
@@ -45,7 +45,7 @@ export const EventsScreen = ({ navigation }: { navigation: any }) => {
       onPress={() => navigation.navigate('EventSignup', { eventId: item.id })}
     >
       {item.picture_url ? (
-        <Image source={{ uri: item.picture_url }} style={styles.cardImage} contentFit="contain" />
+        <Image source={{ uri: item.picture_url }} style={styles.cardImage} contentFit="cover" />
       ) : (
         <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
           <Ionicons name="boat-outline" size={40} color={colors.slate} />
@@ -57,7 +57,7 @@ export const EventsScreen = ({ navigation }: { navigation: any }) => {
         </Text>
         <View style={styles.cardRow}>
           <Ionicons name="calendar-outline" size={14} color={colors.ocean} />
-          <Text style={styles.cardMeta}>{dayjs(item.start_time).format('ddd, MMM D · h:mm A')}</Text>
+          <Text style={styles.cardMeta}>{parseEventTime(item.start_time).format('ddd, MMM D · h:mm A')}</Text>
         </View>
         <View style={styles.cardRow}>
           <Ionicons name="location-outline" size={14} color={colors.ocean} />
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  cardImage: { width: '100%', height: 160, backgroundColor: colors.border },
+  cardImage: { width: '100%', height: 290, backgroundColor: colors.border },
   cardImagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
   cardBody: { padding: spacing.md },
   cardTitle: { ...typography.heading },

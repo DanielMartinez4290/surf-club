@@ -47,6 +47,10 @@ export const GroupChatScreen = ({ route }: { route: any }) => {
         onSend={onSend}
         user={{ _id: user.id, name: user.first_name }}
         textInputProps={{ placeholder: 'Message the group...' }}
+        // Shrink the message list above the keyboard (instead of translating the whole
+        // view up under the header) and measure the real on-screen position so the
+        // nav header and bottom safe area are accounted for.
+        keyboardAvoidingViewProps={{ behavior: 'padding', automaticOffset: true, keyboardVerticalOffset: 0 }}
       />
     </SafeAreaView>
   );

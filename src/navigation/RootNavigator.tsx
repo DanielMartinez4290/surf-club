@@ -10,6 +10,7 @@ import { EditEventScreen } from '../screens/events/EditEventScreen';
 import { EventSignupScreen } from '../screens/events/EventSignupScreen';
 import { ChatScreen } from '../screens/messages/ChatScreen';
 import { GroupChatScreen } from '../screens/messages/GroupChatScreen';
+import { UserProfileScreen } from '../screens/profile/UserProfileScreen';
 import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
 import { useAuth } from '../context/AuthContext';
 import { useRegisterPushToken } from '../hooks/useRegisterPushToken';
@@ -42,6 +43,11 @@ export const RootNavigator = () => {
             name="EventSignup"
             component={EventSignupScreen}
             options={{ title: '' }}
+          />
+          <Stack.Screen
+            name="UserProfile"
+            component={UserProfileScreen}
+            options={({ route }) => ({ title: route.params.firstName })}
           />
           <Stack.Screen name="Chat" component={ChatScreen} options={({ route }) => ({ title: route.params.name })} />
           <Stack.Screen

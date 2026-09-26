@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BackButton } from '../../components/BackButton';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
@@ -37,6 +38,7 @@ export const PhoneSignInScreen = ({ navigation }: Props) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackButton />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={styles.content}>
           <Text style={styles.heading}>Sign in with your phone</Text>
@@ -56,12 +58,6 @@ export const PhoneSignInScreen = ({ navigation }: Props) => {
             </View>
           </View>
           <Button title="Send Code" onPress={handleSendCode} loading={loading} />
-          <Button
-            title="Back"
-            variant="secondary"
-            onPress={() => navigation.goBack()}
-            style={styles.spaced}
-          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -70,7 +66,7 @@ export const PhoneSignInScreen = ({ navigation }: Props) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.sand },
-  content: { padding: spacing.lg, paddingTop: spacing.xxl },
+  content: { padding: spacing.lg, paddingTop: spacing.md },
   heading: { ...typography.title },
   subtext: { ...typography.body, color: colors.slate, marginBottom: spacing.lg },
   row: { flexDirection: 'row', alignItems: 'flex-start' },

@@ -3,10 +3,11 @@ import { NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { DancingScript_700Bold, useFonts } from '@expo-google-fonts/dancing-script';
 import { Button } from '../../components/Button';
 import { useAuth } from '../../context/AuthContext';
 import { ageFromBirthday } from '../../utils/age';
-import { colors, radii, spacing, typography } from '../../theme';
+import { colors, layout, radii, spacing, typography } from '../../theme';
 
 // Navigates into RootStack screens (EditProfile, AdminDashboard) even though this
 // screen itself lives in the nested tab navigator — kept loosely typed rather than
@@ -15,6 +16,7 @@ export const ProfileScreen = ({ navigation }: { navigation: any }) => {
   const { user } = useAuth();
   const [galleryWidth, setGalleryWidth] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [fontLoaded] = useFonts({ DancingScript_700Bold });
 
   if (!user) return null;
 
@@ -36,6 +38,9 @@ export const ProfileScreen = ({ navigation }: { navigation: any }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        {/* Spacer the width of the edit button keeps the title centered */}
+        <View style={styles.headerSide} />
+        <Text style={[styles.brand, fontLoaded && styles.brandFont]}>Wakesurf Club</Text>
         <TouchableOpacity
           style={styles.editButton}
           onPress={() => navigation.navigate('EditProfile')}
@@ -106,7 +111,17 @@ export const ProfileScreen = ({ navigation }: { navigation: any }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.sand },
-  header: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  headerSide: { width: 40 },
+  brand: { fontSize: 36, color: '#3D8FD9', fontWeight: '700' },
+  // The bold weight is its own font file; clear fontWeight so iOS doesn't fall back to the system font
+  brandFont: { fontFamily: 'DancingScript_700Bold', fontWeight: 'normal' },
   editButton: {
     width: 40,
     height: 40,
@@ -117,7 +132,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  content: { padding: spacing.lg, paddingTop: spacing.sm, alignItems: 'center' },
+  content: {
+    width: '100%',
+    maxWidth: layout.maxContentWidth,
+    alignSelf: 'center',
+    padding: spacing.lg,
+    paddingTop: spacing.sm,
+    alignItems: 'center',
+  },
   avatarWrap: { width: '100%', marginBottom: spacing.md },
   avatar: { width: '100%', aspectRatio: 1, borderRadius: radii.lg, backgroundColor: colors.border },
   avatarPlaceholder: { alignItems: 'center', justifyContent: 'center' },

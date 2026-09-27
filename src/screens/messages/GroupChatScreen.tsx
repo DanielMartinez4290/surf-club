@@ -5,16 +5,21 @@ import { GiftedChat, IMessage } from 'react-native-gifted-chat';
 import { apiGetGroupConversation, apiSendGroupMessage } from '../../api/messages';
 import { useAuth } from '../../context/AuthContext';
 import { colors } from '../../theme';
+import { renderChatMessage } from './chatMessage';
 import type { GroupMessage } from '../../types';
 
 const toGiftedMessage = (m: GroupMessage): IMessage => ({
   _id: m.id,
   text: m.message,
   createdAt: new Date(m.created_at),
-  user: { _id: m.user_id_from, name: m.user_from?.first_name },
+  user: {
+    _id: m.user_id_from,
+    name: m.user_from?.first_name,
+    avatar: m.user_from?.images.image_1 ?? undefined,
+  },
 });
 
-export const GroupChatScreen = ({ route }: { route: any }) => {
+export const GroupChatScreen = ({ route, navigation }: { route: any; navigation: any }) => {
   const { eventId } = route.params;
   const { user } = useAuth();
   const [messages, setMessages] = useState<IMessage[]>([]);
@@ -45,6 +50,14 @@ export const GroupChatScreen = ({ route }: { route: any }) => {
       <GiftedChat
         messages={messages}
         onSend={onSend}
+        renderMessage={renderChatMessage}
+        onPressAvatar={(sender) =>
+          navigation.navigate('UserProfile', {
+            userId: Number(sender._id),
+            firstName: sender.name ?? '',
+            image: typeof sender.avatar === 'string' ? sender.avatar : null,
+          })
+        }
         user={{ _id: user.id, name: user.first_name }}
         textInputProps={{ placeholder: 'Message the group...' }}
         // Shrink the message list above the keyboard (instead of translating the whole

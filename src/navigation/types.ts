@@ -20,7 +20,7 @@ export type RootStackParamList = {
   EditEvent: { eventId: number };
   EventSignup: { eventId: number };
   UserProfile: { userId: number; firstName: string; image?: string | null };
-  Chat: { userId: number; name: string };
-  GroupChat: { eventId: number; title: string };
+  Chat: { userId: number; name: string; image?: string | null };
+  GroupChat: { eventId: number; title: string; image?: string | null };
   AdminDashboard: undefined;
 };

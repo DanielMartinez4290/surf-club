@@ -113,6 +113,13 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
 
           <TextField label="First Name" value={firstName} onChangeText={setFirstName} />
           <TextField label="Last Name" value={lastName} onChangeText={setLastName} />
+          <TextField
+            label="Email"
+            value={user?.email ?? ''}
+            editable={false}
+            selectTextOnFocus={false}
+            style={styles.readOnlyInput}
+          />
           <TouchableOpacity style={styles.dateButton} onPress={() => setShowBirthdayPicker(true)}>
             <Text style={styles.dateLabel}>Birthday</Text>
             <Text style={[styles.dateValue, !birthday && styles.datePlaceholder]}>
@@ -151,6 +158,7 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
 const SLOT_SIZE = 100;
 
 const styles = StyleSheet.create({
+  readOnlyInput: { backgroundColor: colors.sand, color: colors.slate },
   container: { flex: 1, backgroundColor: colors.sand },
   content: { padding: spacing.lg },
   heading: { ...typography.title, marginBottom: spacing.lg },

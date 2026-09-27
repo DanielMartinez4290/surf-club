@@ -29,6 +29,11 @@ export const radii = {
   pill: 999,
 } as const;
 
+// Widest a content column gets; keeps photos and cards phone-sized on iPad.
+export const layout = {
+  maxContentWidth: 640,
+} as const;
+
 export const typography = {
   title: { fontSize: 28, fontWeight: '700' as const, color: colors.ink },
   heading: { fontSize: 20, fontWeight: '600' as const, color: colors.ink },

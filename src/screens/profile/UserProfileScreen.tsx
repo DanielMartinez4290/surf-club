@@ -82,7 +82,6 @@ export const UserProfileScreen = ({ route }: { route: any }) => {
           {name}
           {profile?.age != null ? `, ${profile.age}` : ''}
         </Text>
-        {profile?.owner_or_rider ? <Text style={styles.role}>{profile.owner_or_rider}</Text> : null}
 
         {profile?.bio ? (
           <View style={styles.section}>
@@ -114,7 +113,6 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.5)' },
   dotActive: { backgroundColor: colors.white, width: 16 },
   name: { ...typography.heading, fontSize: 24, marginTop: spacing.sm },
-  role: { ...typography.caption, marginTop: spacing.xs },
   section: { width: '100%', marginTop: spacing.lg },
   sectionHeading: { ...typography.heading, fontSize: 17, marginBottom: spacing.xs },
   bio: { ...typography.body, color: colors.slate },

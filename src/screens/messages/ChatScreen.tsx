@@ -5,26 +5,35 @@ import { GiftedChat, IMessage } from 'react-native-gifted-chat';
 import { apiGetConversation, apiMarkConversationRead, apiSendMessage } from '../../api/messages';
 import { useAuth } from '../../context/AuthContext';
 import { colors } from '../../theme';
+import { renderChatMessage } from './chatMessage';
 import type { DirectMessage } from '../../types';
 
-const toGiftedMessage = (m: DirectMessage, myId: number): IMessage => ({
+const toGiftedMessage = (
+  m: DirectMessage,
+  myId: number,
+  partnerImage?: string | null,
+  partnerFirstName?: string
+): IMessage => ({
   _id: m.id,
   text: m.message,
   createdAt: new Date(m.created_at),
-  user: { _id: m.user_id_from === myId ? myId : m.user_id_from },
+  user:
+    m.user_id_from === myId
+      ? { _id: myId }
+      : { _id: m.user_id_from, name: partnerFirstName, avatar: partnerImage ?? undefined },
 });
 
-export const ChatScreen = ({ route }: { route: any }) => {
-  const { userId, name } = route.params;
+export const ChatScreen = ({ route, navigation }: { route: any; navigation: any }) => {
+  const { userId, name, image } = route.params;
   const { user } = useAuth();
   const [messages, setMessages] = useState<IMessage[]>([]);
 
   const load = useCallback(async () => {
     if (!user) return;
     const conversation = await apiGetConversation(userId);
-    setMessages(conversation.map((m) => toGiftedMessage(m, user.id)).reverse());
+    setMessages(conversation.map((m) => toGiftedMessage(m, user.id, image, name.split(' ')[0])).reverse());
     apiMarkConversationRead(userId).catch(() => {});
-  }, [userId, user]);
+  }, [userId, user, image, name]);
 
   useEffect(() => {
     load();
@@ -47,6 +56,10 @@ export const ChatScreen = ({ route }: { route: any }) => {
       <GiftedChat
         messages={messages}
         onSend={onSend}
+        renderMessage={renderChatMessage}
+        onPressAvatar={() =>
+          navigation.navigate('UserProfile', { userId, firstName: name.split(' ')[0], image })
+        }
         user={{ _id: user.id, name: `${user.first_name}` }}
         textInputProps={{ placeholder: 'Message...' }}
         // Shrink the message list above the keyboard (instead of translating the whole

@@ -16,7 +16,7 @@ import {
 } from '../../api/events';
 import { toApiError } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { colors, radii, spacing, typography } from '../../theme';
+import { colors, layout, radii, spacing, typography } from '../../theme';
 import type { EventSignup, SurfEvent } from '../../types';
 
 export const EventSignupScreen = ({ navigation, route }: { navigation: any; route: any }) => {
@@ -65,7 +65,7 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
       //
       //   const { error: initError } = await initPaymentSheet({
       //     paymentIntentClientSecret: client_secret,
-      //     merchantDisplayName: 'Surf Club ATX',
+      //     merchantDisplayName: 'Wakesurf Club',
       //   });
       //   if (initError) throw new Error(initError.message);
       //
@@ -105,7 +105,7 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.scroll}>
         {event.picture_url && (
           <Image
             source={{ uri: event.picture_url }}
@@ -157,6 +157,10 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
               {signups.length}/{event.number_of_spots} spots taken
             </Text>
           </View>
+          <View style={styles.metaRow}>
+            <Ionicons name="cash-outline" size={16} color={colors.ocean} />
+            <Text style={styles.metaText}>{event.price > 0 ? `$${event.price} per person` : 'Free'}</Text>
+          </View>
 
           <Text style={styles.description}>{event.description}</Text>
 
@@ -172,7 +176,7 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
           ) : (
             <>
               <Button
-                title={isFull ? 'Outing Full' : 'Interested'}
+                title={isFull ? 'Outing Full' : "I'm Going"}
                 onPress={handleJoin}
                 loading={joining}
                 disabled={isFull}
@@ -186,27 +190,39 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
             <Button
               title="Group Chat"
               variant="secondary"
-              onPress={() => navigation.navigate('GroupChat', { eventId: event.id, title: event.title })}
+              onPress={() => navigation.navigate('GroupChat', { eventId: event.id, title: event.title, image: event.picture_url })}
               style={styles.spaced}
             />
           )}
 
-          <Text style={styles.rosterHeading}>Who's interested</Text>
+          <Text style={styles.rosterHeading}>Going</Text>
           <FlatList
             data={signups}
             keyExtractor={(item) => String(item.id)}
             scrollEnabled={false}
+            numColumns={3}
             renderItem={({ item }) => (
-              <View style={styles.rosterRow}>
+              <TouchableOpacity
+                style={styles.rosterRow}
+                disabled={!item.user}
+                onPress={() =>
+                  item.user &&
+                  navigation.navigate('UserProfile', {
+                    userId: item.user.id,
+                    firstName: item.user.first_name,
+                    image: item.user.images.image_1,
+                  })
+                }
+              >
                 {item.user?.images.image_1 ? (
                   <Image source={{ uri: item.user.images.image_1 }} style={styles.rosterAvatar} />
                 ) : (
                   <View style={[styles.rosterAvatar, styles.rosterAvatarPlaceholder]} />
                 )}
                 <Text style={styles.rosterName}>{item.user?.first_name}</Text>
-              </View>
+              </TouchableOpacity>
             )}
-            ListEmptyComponent={<Text style={styles.emptyRoster}>No one is interested yet.</Text>}
+            ListEmptyComponent={<Text style={styles.emptyRoster}>No one is going yet.</Text>}
           />
         </View>
       </ScrollView>
@@ -216,6 +232,7 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.sand },
+  scroll: { width: '100%', maxWidth: layout.maxContentWidth, alignSelf: 'center' },
   image: { width: '100%', backgroundColor: colors.border },
   content: { padding: spacing.lg },
   title: { ...typography.title, fontSize: 24 },
@@ -229,9 +246,9 @@ const styles = StyleSheet.create({
   spaced: { marginTop: spacing.md },
   notCharged: { ...typography.caption, textAlign: 'center', marginTop: spacing.xs },
   rosterHeading: { ...typography.heading, marginTop: spacing.lg, marginBottom: spacing.sm },
-  rosterRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.xs, gap: spacing.sm },
-  rosterAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.border },
+  rosterRow: { width: '33.33%', alignItems: 'center', paddingVertical: spacing.sm, gap: spacing.xs },
+  rosterAvatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.border },
   rosterAvatarPlaceholder: {},
-  rosterName: { ...typography.body },
+  rosterName: { ...typography.body, textAlign: 'center' },
   emptyRoster: { ...typography.caption },
 });

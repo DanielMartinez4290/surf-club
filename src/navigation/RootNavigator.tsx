@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { createNavigationContainerRef, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthNavigator } from './AuthNavigator';
 import { AppTabs } from './AppTabs';
@@ -10,18 +10,22 @@ import { EditEventScreen } from '../screens/events/EditEventScreen';
 import { EventSignupScreen } from '../screens/events/EventSignupScreen';
 import { ChatScreen } from '../screens/messages/ChatScreen';
 import { GroupChatScreen } from '../screens/messages/GroupChatScreen';
+import { ChatHeaderTitle } from '../screens/messages/ChatHeaderTitle';
 import { UserProfileScreen } from '../screens/profile/UserProfileScreen';
 import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
 import { useAuth } from '../context/AuthContext';
 import { useRegisterPushToken } from '../hooks/useRegisterPushToken';
+import { useDevScreenLinks } from './useDevScreenLinks';
 import { colors } from '../theme';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 export const RootNavigator = () => {
   const { isLoading, user } = useAuth();
   useRegisterPushToken();
+  useDevScreenLinks(navigationRef, !!user);
 
   if (isLoading) {
     return (
@@ -32,9 +36,10 @@ export const RootNavigator = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       {user ? (
-        <Stack.Navigator>
+        // 'minimal' shows just the back arrow instead of the previous screen's name (e.g. "Tabs")
+        <Stack.Navigator screenOptions={{ headerBackButtonDisplayMode: 'minimal' }}>
           <Stack.Screen name="Tabs" component={AppTabs} options={{ headerShown: false }} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
           <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={{ headerShown: false }} />
@@ -53,7 +58,10 @@ export const RootNavigator = () => {
           <Stack.Screen
             name="GroupChat"
             component={GroupChatScreen}
-            options={({ route }) => ({ title: route.params.title })}
+            options={({ route }) => ({
+              title: route.params.title,
+              headerTitle: () => <ChatHeaderTitle title={route.params.title} image={route.params.image} />,
+            })}
           />
           <Stack.Screen
             name="AdminDashboard"

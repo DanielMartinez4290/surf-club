@@ -1,4 +1,4 @@
-# Surf Club ATX
+# Wakesurf Club
 
 Expo/React Native app for Austin's wake &amp; surf outing club. Built from Wave's codebase, carrying over auth, events (repurposed as club outings), messaging, profile editing, and the admin dashboard — swiping/matching, likes, Stories, and Wall Posts were intentionally dropped.
 

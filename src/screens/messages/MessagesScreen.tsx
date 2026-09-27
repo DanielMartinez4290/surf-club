@@ -50,7 +50,11 @@ export const MessagesScreen = ({ navigation }: { navigation: any }) => {
                     key={t.event.id}
                     style={styles.row}
                     onPress={() =>
-                      navigation.navigate('GroupChat', { eventId: t.event.id, title: t.event.title })
+                      navigation.navigate('GroupChat', {
+                        eventId: t.event.id,
+                        title: t.event.title,
+                        image: t.event.picture_url,
+                      })
                     }
                   >
                     {t.event.picture_url ? (
@@ -81,6 +85,7 @@ export const MessagesScreen = ({ navigation }: { navigation: any }) => {
                     navigation.navigate('Chat', {
                       userId: t.user.id,
                       name: `${t.user.first_name} ${t.user.last_name}`,
+                      image: t.user.images.image_1,
                     })
                   }
                 >

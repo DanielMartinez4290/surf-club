@@ -13,7 +13,7 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { parseEventTime } from '../../utils/eventTime';
 import { apiGetEvents } from '../../api/events';
-import { colors, radii, spacing, typography } from '../../theme';
+import { colors, layout, radii, spacing, typography } from '../../theme';
 import type { SurfEvent } from '../../types';
 
 export const EventsScreen = ({ navigation }: { navigation: any }) => {
@@ -125,7 +125,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  list: { padding: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
+  list: {
+    width: '100%',
+    maxWidth: layout.maxContentWidth,
+    alignSelf: 'center',
+    padding: spacing.lg,
+    paddingTop: spacing.md,
+    gap: spacing.md,
+  },
   card: {
     borderRadius: radii.md,
     backgroundColor: colors.white,
@@ -134,7 +141,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  cardImage: { width: '100%', height: 290, backgroundColor: colors.border },
+  // Proportional rather than a fixed height so wide screens don't crop it to a strip (~290px tall on phones)
+  cardImage: { width: '100%', aspectRatio: 1.2, backgroundColor: colors.border },
   cardImagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
   cardBody: { padding: spacing.md },
   cardTitle: { ...typography.heading },

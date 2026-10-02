@@ -9,7 +9,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
-import { apiUpdateProfile, apiUploadImage } from '../../api/user';
+import { apiDeleteAccount, apiUpdateProfile, apiUploadImage } from '../../api/user';
 import { toApiError } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { colors, radii, spacing, typography } from '../../theme';
@@ -24,6 +24,7 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
   const [bio, setBio] = useState(user?.bio ?? '');
   const [birthday, setBirthday] = useState<Date | null>(user?.birthday ? dayjs(user.birthday).toDate() : null);
   const [showBirthdayPicker, setShowBirthdayPicker] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [images, setImages] = useState<UserImages>(
     user?.images ?? {
       image_1: null,
@@ -82,6 +83,30 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
     ]);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This permanently deletes your account, profile, photos, outings, and messages. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await apiDeleteAccount();
+              await signOut();
+            } catch (error) {
+              Alert.alert('Could not delete account', toApiError(error).message);
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <BackButton />
@@ -89,7 +114,6 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.heading}>Edit Profile</Text>
 
-          <Text style={styles.label}>Photos</Text>
           <View style={styles.grid}>
             {IMAGE_SLOTS.map((slot) => {
               const key = `image_${slot}` as keyof UserImages;
@@ -111,8 +135,6 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
             })}
           </View>
 
-          <TextField label="First Name" value={firstName} onChangeText={setFirstName} />
-          <TextField label="Last Name" value={lastName} onChangeText={setLastName} />
           <TextField
             label="Email"
             value={user?.email ?? ''}
@@ -120,6 +142,8 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
             selectTextOnFocus={false}
             style={styles.readOnlyInput}
           />
+          <TextField label="First Name" value={firstName} onChangeText={setFirstName} />
+          <TextField label="Last Name" value={lastName} onChangeText={setLastName} />
           <TouchableOpacity style={styles.dateButton} onPress={() => setShowBirthdayPicker(true)}>
             <Text style={styles.dateLabel}>Birthday</Text>
             <Text style={[styles.dateValue, !birthday && styles.datePlaceholder]}>
@@ -148,7 +172,23 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
           />
 
           <Button title="Save" onPress={handleSave} loading={saving} style={styles.spaced} />
+          {user?.is_admin && (
+            <Button
+              title="Admin Dashboard"
+              variant="secondary"
+              onPress={() => navigation.navigate('AdminDashboard')}
+              style={styles.spaced}
+            />
+          )}
           <Button title="Sign Out" variant="danger" onPress={handleSignOut} style={styles.spaced} />
+          <TouchableOpacity
+            style={styles.deleteLink}
+            onPress={handleDeleteAccount}
+            disabled={deleting}
+            accessibilityRole="button"
+          >
+            <Text style={styles.deleteLinkText}>{deleting ? 'Deleting account…' : 'Delete Account'}</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -162,7 +202,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.sand },
   content: { padding: spacing.lg },
   heading: { ...typography.title, marginBottom: spacing.lg },
-  label: { ...typography.caption, marginBottom: spacing.sm },
+  deleteLink: { alignSelf: 'center', paddingVertical: spacing.md, marginTop: spacing.sm },
+  deleteLinkText: { ...typography.body, color: colors.danger, fontWeight: '600' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
   slot: {
     width: SLOT_SIZE,

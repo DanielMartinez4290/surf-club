@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { apiGetPublicProfile } from '../../api/user';
+import { apiAdminDeleteUser } from '../../api/admin';
+import { toApiError } from '../../api/client';
+import { Button } from '../../components/Button';
+import { useAuth } from '../../context/AuthContext';
 import { colors, radii, spacing, typography } from '../../theme';
 import type { PublicUser } from '../../types';
 
 // Read-only view of another member's profile. Renders straight away from the
 // name/photo passed in by the screen that linked here, then fills in the bio
 // and remaining photos once the full profile loads.
-export const UserProfileScreen = ({ route }: { route: any }) => {
+export const UserProfileScreen = ({ route, navigation }: { route: any; navigation: any }) => {
   const { userId, firstName, image } = route.params;
+  const { user } = useAuth();
+  const [removing, setRemoving] = useState(false);
   const [profile, setProfile] = useState<PublicUser | null>(null);
   const [galleryWidth, setGalleryWidth] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -34,6 +40,28 @@ export const UserProfileScreen = ({ route }: { route: any }) => {
       ? [image]
       : [];
   const name = profile?.first_name ?? firstName;
+
+  const canRemove = !!user?.is_admin && user.id !== userId;
+
+  const handleRemove = () => {
+    Alert.alert('Remove Member', `Remove ${name} from Wakesurf Club? This deletes their account.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          setRemoving(true);
+          try {
+            await apiAdminDeleteUser(userId);
+            navigation.goBack();
+          } catch (error) {
+            Alert.alert('Could not remove member', toApiError(error).message);
+            setRemoving(false);
+          }
+        },
+      },
+    ]);
+  };
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (!galleryWidth) return;
@@ -89,6 +117,16 @@ export const UserProfileScreen = ({ route }: { route: any }) => {
             <Text style={styles.bio}>{profile.bio}</Text>
           </View>
         ) : null}
+
+        {canRemove && (
+          <Button
+            title="Remove Member"
+            variant="danger"
+            onPress={handleRemove}
+            loading={removing}
+            style={styles.removeButton}
+          />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -116,4 +154,5 @@ const styles = StyleSheet.create({
   section: { width: '100%', marginTop: spacing.lg },
   sectionHeading: { ...typography.heading, fontSize: 17, marginBottom: spacing.xs },
   bio: { ...typography.body, color: colors.slate },
+  removeButton: { width: '100%', marginTop: spacing.xl },
 });

@@ -17,17 +17,21 @@
         "simulator": true
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://52.73.2.37.sslip.io"
+        "EXPO_PUBLIC_API_URL": "https://api.wakesurfclub.net"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://52.73.2.37.sslip.io"
+        "EXPO_PUBLIC_API_URL": "https://api.wakesurfclub.net"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6816528862"
+      }
+    }
   }
 }

@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { DancingScript_700Bold, useFonts } from '@expo-google-fonts/dancing-script';
-import { Button } from '../../components/Button';
 import { useAuth } from '../../context/AuthContext';
 import { ageFromBirthday } from '../../utils/age';
 import { colors, layout, radii, spacing, typography } from '../../theme';
@@ -96,14 +95,6 @@ export const ProfileScreen = ({ navigation }: { navigation: any }) => {
         </Text>
         {user.bio ? <Text style={styles.bio}>{user.bio}</Text> : null}
 
-        {user.is_admin && (
-          <Button
-            title="Admin Dashboard"
-            variant="secondary"
-            onPress={() => navigation.navigate('AdminDashboard')}
-            style={styles.spaced}
-          />
-        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -157,5 +148,4 @@ const styles = StyleSheet.create({
   dotActive: { backgroundColor: colors.white, width: 16 },
   name: { ...typography.heading, fontSize: 24, marginTop: spacing.sm },
   bio: { ...typography.body, textAlign: 'center', marginTop: spacing.md, color: colors.slate },
-  spaced: { marginTop: spacing.md, width: '100%' },
 });

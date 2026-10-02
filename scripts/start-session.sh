@@ -66,6 +66,32 @@ else
   echo "   Sequel Ace: host 127.0.0.1, port $TUNNEL_LOCAL_PORT (password: npm run db:password)"
 fi
 
-# 3. Metro with hot reload; --ios opens the installed dev-client build on the booted simulator
+# 3. Stop any dev server left over from an earlier session, so this one gets port 8081 and
+#    picks up the current app.config.js / .env (an old Metro keeps serving stale config).
+METRO_PORT=8081
+OLD_PIDS=$(lsof -tiTCP:"$METRO_PORT" -sTCP:LISTEN 2>/dev/null || true)
+if [[ -n "$OLD_PIDS" ]]; then
+  for pid in $OLD_PIDS; do
+    cmd=$(ps -o command= -p "$pid" 2>/dev/null || true)
+    # Only stop Node dev servers; leave anything else on the port alone.
+    if [[ "$cmd" != *node* ]]; then
+      echo "!! Port $METRO_PORT is used by something other than a dev server: $cmd" >&2
+      echo "   Stop it yourself and re-run." >&2
+      exit 1
+    fi
+    echo "==> Stopping previous dev server (pid $pid)"
+    kill "$pid" 2>/dev/null || true
+  done
+  for _ in {1..10}; do
+    lsof -iTCP:"$METRO_PORT" -sTCP:LISTEN >/dev/null 2>&1 || break
+    sleep 1
+  done
+  # Force it if it ignored the polite signal.
+  for pid in $(lsof -tiTCP:"$METRO_PORT" -sTCP:LISTEN 2>/dev/null || true); do
+    kill -9 "$pid" 2>/dev/null || true
+  done
+fi
+
+# 4. Metro with hot reload; --ios opens the installed dev-client build on the booted simulator
 echo "==> Starting Metro"
 npx expo start --dev-client --ios

@@ -33,13 +33,6 @@ module.exports = {
         },
       ],
       [
-        'expo-location',
-        {
-          locationWhenInUsePermission:
-            'Wakesurf Club uses your location to show outings near you while the app is open.',
-        },
-      ],
-      [
         '@stripe/stripe-react-native',
         {
           enableGooglePay: false,
@@ -52,8 +45,6 @@ module.exports = {
       bundleIdentifier: 'com.surfclub.app',
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-        NSLocationWhenInUseUsageDescription:
-          'Wakesurf Club uses your location to show outings near you while the app is open.',
         NSPhotoLibraryUsageDescription:
           'Wakesurf Club uses your photos to set your profile picture and outing photos.',
         // Hide expo-dev-menu's floating "Tools" gear in dev builds by default (Cmd+D / shake still
@@ -69,7 +60,6 @@ module.exports = {
         monochromeImage: './assets/android-icon-monochrome.png',
         backgroundColor: '#F6F1E7',
       },
-      permissions: ['android.permission.ACCESS_COARSE_LOCATION', 'android.permission.ACCESS_FINE_LOCATION'],
     },
     web: {
       favicon: './assets/favicon.png',

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -11,20 +12,35 @@ export const MessagesScreen = ({ navigation }: { navigation: any }) => {
   const [eventThreads, setEventThreads] = useState<EventThread[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
-    setRefreshing(true);
+  // The spinner only shows for pull-to-refresh; tab and focus refreshes update quietly.
+  const load = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setRefreshing(true);
     try {
       const [direct, events] = await Promise.all([apiGetMessageThreads(), apiGetEventThreads()]);
       setDirectThreads(direct);
       setEventThreads(events);
+    } catch {
+      // Keep showing the last loaded threads; the next refresh will try again.
     } finally {
-      setRefreshing(false);
+      if (showSpinner) setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Refresh whenever the tab comes into view, e.g. switching tabs or backing out of a chat...
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
+
+  // ...and when the Messages tab is tapped while already on it.
+  useEffect(
+    () =>
+      navigation.addListener('tabPress', () => {
+        if (navigation.isFocused()) load();
+      }),
+    [navigation, load]
+  );
 
   const sections = [
     { title: 'Outing Chats', key: 'events' },
@@ -37,7 +53,7 @@ export const MessagesScreen = ({ navigation }: { navigation: any }) => {
       <FlatList
         data={sections}
         keyExtractor={(s) => s.key}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} />}
         renderItem={({ item }) => (
           <View>
             <Text style={styles.sectionTitle}>{item.title}</Text>

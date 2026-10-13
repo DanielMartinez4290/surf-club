@@ -1,9 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GiftedChat, IMessage } from 'react-native-gifted-chat';
+import { Ionicons } from '@expo/vector-icons';
 import { apiGetConversation, apiMarkConversationRead, apiSendMessage } from '../../api/messages';
+import { toApiError } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { promptBlock, promptReport } from '../../utils/moderation';
 import { colors } from '../../theme';
 import { renderChatMessage } from './chatMessage';
 import type { DirectMessage } from '../../types';
@@ -44,9 +47,55 @@ export const ChatScreen = ({ route, navigation }: { route: any; navigation: any 
       const text = newMessages[0]?.text;
       if (!text) return;
       setMessages((prev) => GiftedChat.append(prev, newMessages));
-      await apiSendMessage(userId, text);
+      try {
+        await apiSendMessage(userId, text);
+      } catch (error) {
+        // Not delivered (e.g. it tripped the language filter), so take it back out of the thread.
+        setMessages((prev) => prev.filter((m) => m._id !== newMessages[0]._id));
+        Alert.alert('Message not sent', toApiError(error).message);
+      }
     },
     [userId]
+  );
+
+  const firstName = name.split(' ')[0];
+
+  // Report / block menu in the header.
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() =>
+            Alert.alert(firstName, undefined, [
+              { text: `Report ${firstName}`, onPress: () => promptReport('user', userId, firstName) },
+              {
+                text: `Block ${firstName}`,
+                style: 'destructive',
+                onPress: () => promptBlock(userId, firstName, () => navigation.popToTop()),
+              },
+              { text: 'Cancel', style: 'cancel' },
+            ])
+          }
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Report or block"
+        >
+          <Ionicons name="ellipsis-horizontal" size={22} color={colors.ocean} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, userId, firstName]);
+
+  // Long-press a message they sent to report it.
+  const onLongPressMessage = useCallback(
+    (_context: unknown, message: IMessage) => {
+      if (!user || message.user._id === user.id) return;
+      Alert.alert('Message', message.text, [
+        { text: 'Report Message', onPress: () => promptReport('direct_message', Number(message._id), 'Message') },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    },
+    [user]
   );
 
   if (!user) return null;
@@ -57,9 +106,8 @@ export const ChatScreen = ({ route, navigation }: { route: any; navigation: any 
         messages={messages}
         onSend={onSend}
         renderMessage={renderChatMessage}
-        onPressAvatar={() =>
-          navigation.navigate('UserProfile', { userId, firstName: name.split(' ')[0], image })
-        }
+        onLongPressMessage={onLongPressMessage}
+        onPressAvatar={() => navigation.navigate('UserProfile', { userId, firstName, image })}
         user={{ _id: user.id, name: `${user.first_name}` }}
         textInputProps={{ placeholder: 'Message...' }}
         // Shrink the message list above the keyboard (instead of translating the whole

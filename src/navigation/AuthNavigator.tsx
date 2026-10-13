@@ -6,6 +6,7 @@ import { LoginScreen } from '../screens/auth/LoginScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import { PhoneSignInScreen } from '../screens/auth/PhoneSignInScreen';
 import { VerifyCodeScreen } from '../screens/auth/VerifyCodeScreen';
+import { TermsScreen } from '../screens/legal/TermsScreen';
 import type { AuthStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -18,5 +19,6 @@ export const AuthNavigator = () => (
     <Stack.Screen name="Register" component={RegisterScreen} />
     <Stack.Screen name="PhoneSignIn" component={PhoneSignInScreen} />
     <Stack.Screen name="VerifyCode" component={VerifyCodeScreen} />
+    <Stack.Screen name="Terms" component={TermsScreen} />
   </Stack.Navigator>
 );

@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { apiGetPublicProfile } from '../../api/user';
 import { apiAdminDeleteUser } from '../../api/admin';
+import { apiUnblockUser } from '../../api/moderation';
+import { promptBlock, promptReport } from '../../utils/moderation';
 import { toApiError } from '../../api/client';
 import { Button } from '../../components/Button';
 import { useAuth } from '../../context/AuthContext';
@@ -41,7 +43,20 @@ export const UserProfileScreen = ({ route, navigation }: { route: any; navigatio
       : [];
   const name = profile?.first_name ?? firstName;
 
-  const canRemove = !!user?.is_admin && user.id !== userId;
+  const isMe = user?.id === userId;
+  const canRemove = !!user?.is_admin && !isMe;
+
+  // Back out to the tabs so nothing of theirs is left on screen; the tabs reload on focus.
+  const handleBlock = () => promptBlock(userId, name, () => navigation.popToTop());
+
+  const handleUnblock = async () => {
+    try {
+      await apiUnblockUser(userId);
+      setProfile((prev) => (prev ? { ...prev, blocked_by_me: false } : prev));
+    } catch (error) {
+      Alert.alert('Could not unblock', toApiError(error).message);
+    }
+  };
 
   const handleRemove = () => {
     Alert.alert('Remove Member', `Remove ${name} from Wakesurf Club? This deletes their account.`, [
@@ -118,6 +133,29 @@ export const UserProfileScreen = ({ route, navigation }: { route: any; navigatio
           </View>
         ) : null}
 
+        {!isMe && (
+          <View style={styles.safetyRow}>
+            <Button
+              title="Report"
+              variant="secondary"
+              icon="flag-outline"
+              onPress={() => promptReport('user', userId, name)}
+              style={styles.safetyButton}
+            />
+            {profile?.blocked_by_me ? (
+              <Button title="Unblock" variant="secondary" onPress={handleUnblock} style={styles.safetyButton} />
+            ) : (
+              <Button
+                title="Block"
+                variant="secondary"
+                icon="ban-outline"
+                onPress={handleBlock}
+                style={styles.safetyButton}
+              />
+            )}
+          </View>
+        )}
+
         {canRemove && (
           <Button
             title="Remove Member"
@@ -154,5 +192,7 @@ const styles = StyleSheet.create({
   section: { width: '100%', marginTop: spacing.lg },
   sectionHeading: { ...typography.heading, fontSize: 17, marginBottom: spacing.xs },
   bio: { ...typography.body, color: colors.slate },
-  removeButton: { width: '100%', marginTop: spacing.xl },
+  safetyRow: { flexDirection: 'row', gap: spacing.sm, width: '100%', marginTop: spacing.xl },
+  safetyButton: { flex: 1 },
+  removeButton: { width: '100%', marginTop: spacing.md },
 });

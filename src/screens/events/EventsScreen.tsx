@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ActivityIndicator,
   FlatList,
@@ -21,22 +22,31 @@ export const EventsScreen = ({ navigation }: { navigation: any }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async (isRefresh = false) => {
-    isRefresh ? setRefreshing(true) : setLoading(true);
+  const hasLoaded = useRef(false);
+
+  // 'quiet' reloads without a spinner and keeps the current list if the request fails.
+  const load = useCallback(async (mode: 'initial' | 'refresh' | 'quiet' = 'initial') => {
+    if (mode === 'refresh') setRefreshing(true);
+    if (mode === 'initial') setLoading(true);
     try {
       const data = await apiGetEvents();
       setEvents(data);
     } catch {
-      setEvents([]);
+      if (mode !== 'quiet') setEvents([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Reload whenever the tab comes back into view, so a new outing shows up and a
+  // blocked member's outings are gone as soon as you return here.
+  useFocusEffect(
+    useCallback(() => {
+      load(hasLoaded.current ? 'quiet' : 'initial');
+      hasLoaded.current = true;
+    }, [load])
+  );
 
   const renderItem = ({ item }: { item: SurfEvent }) => (
     <TouchableOpacity
@@ -93,7 +103,7 @@ export const EventsScreen = ({ navigation }: { navigation: any }) => {
           renderItem={renderItem}
           contentContainerStyle={styles.list}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} />
+            <RefreshControl refreshing={refreshing} onRefresh={() => load('refresh')} />
           }
           ListEmptyComponent={
             <View style={styles.empty}>

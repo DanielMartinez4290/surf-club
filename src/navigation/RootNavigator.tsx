@@ -13,6 +13,8 @@ import { GroupChatScreen } from '../screens/messages/GroupChatScreen';
 import { ChatHeaderTitle } from '../screens/messages/ChatHeaderTitle';
 import { UserProfileScreen } from '../screens/profile/UserProfileScreen';
 import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
+import { BlockedUsersScreen } from '../screens/profile/BlockedUsersScreen';
+import { TermsScreen } from '../screens/legal/TermsScreen';
 import { useAuth } from '../context/AuthContext';
 import { useRegisterPushToken } from '../hooks/useRegisterPushToken';
 import { useDevScreenLinks } from './useDevScreenLinks';
@@ -68,6 +70,8 @@ export const RootNavigator = () => {
             component={AdminDashboardScreen}
             options={{ headerShown: false }}
           />
+          <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Terms" component={TermsScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       ) : (
         <AuthNavigator />

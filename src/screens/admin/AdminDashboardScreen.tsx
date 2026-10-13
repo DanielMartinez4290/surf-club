@@ -17,11 +17,19 @@ import {
   apiAdminTakeEventOwnership,
   apiAdminUpdateEventDate,
 } from '../../api/admin';
+import { apiAdminListReports, apiAdminResolveReport } from '../../api/moderation';
 import { toApiError } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { parseEventTime } from '../../utils/eventTime';
 import { colors, radii, spacing, typography } from '../../theme';
-import type { SurfEvent, User } from '../../types';
+import type { Report, SurfEvent, User } from '../../types';
+
+const REPORT_TYPE_LABELS: Record<Report['content_type'], string> = {
+  user: 'Profile',
+  event: 'Outing',
+  direct_message: 'Direct message',
+  group_message: 'Group chat message',
+};
 
 export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
   const { user } = useAuth();
@@ -33,6 +41,18 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [dateEvent, setDateEvent] = useState<SurfEvent | null>(null);
   const [pickedDate, setPickedDate] = useState(new Date());
+  const [reports, setReports] = useState<Report[]>([]);
+  const [reportsError, setReportsError] = useState<string | null>(null);
+  const [busyReportId, setBusyReportId] = useState<number | null>(null);
+
+  const loadReports = useCallback(() => {
+    apiAdminListReports()
+      .then((list) => {
+        setReports(list);
+        setReportsError(null);
+      })
+      .catch((error) => setReportsError(toApiError(error).message));
+  }, []);
 
   const loadEvents = useCallback(() => {
     apiAdminListEvents()
@@ -48,8 +68,44 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
     useCallback(() => {
       apiAdminListUsers().then(setUsers).catch(() => {});
       loadEvents();
-    }, [loadEvents])
+      loadReports();
+    }, [loadEvents, loadReports])
   );
+
+  const resolveReport = async (report: Report, action: 'dismiss' | 'remove_content' | 'remove_user') => {
+    setBusyReportId(report.id);
+    try {
+      await apiAdminResolveReport(report.id, action);
+      loadReports();
+      // Removing content or a member changes the lists below too.
+      if (action !== 'dismiss') {
+        loadEvents();
+        apiAdminListUsers().then(setUsers).catch(() => {});
+      }
+    } catch (error) {
+      Alert.alert('Could not update report', toApiError(error).message);
+    } finally {
+      setBusyReportId(null);
+    }
+  };
+
+  const confirmRemoveContent = (report: Report) => {
+    Alert.alert('Remove Content', `Delete this ${REPORT_TYPE_LABELS[report.content_type].toLowerCase()} for everyone?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => resolveReport(report, 'remove_content') },
+    ]);
+  };
+
+  const confirmRemoveMember = (report: Report) => {
+    Alert.alert(
+      'Remove Member',
+      `Remove ${report.reported_user?.first_name ?? 'this member'} from Wakesurf Club? This deletes their account and everything they posted.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: () => resolveReport(report, 'remove_user') },
+      ]
+    );
+  };
 
   const handleSendPush = async () => {
     if (!pushMessage.trim()) return;
@@ -128,6 +184,63 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
         <Text style={styles.sectionTitle}>Send Announcement</Text>
         <TextField label="Message" value={pushMessage} onChangeText={setPushMessage} multiline numberOfLines={2} />
         <Button title="Send to All Members" onPress={handleSendPush} loading={sending} />
+
+        <Text style={styles.sectionTitle}>Reports ({reports.length})</Text>
+        {reportsError ? (
+          <Text style={styles.error}>Couldn't load reports: {reportsError}</Text>
+        ) : reports.length === 0 ? (
+          <Text style={styles.empty}>No open reports.</Text>
+        ) : null}
+        {reports.map((report) => {
+          const busy = busyReportId === report.id;
+          const reported = report.reported_user;
+          return (
+            <View key={report.id} style={styles.eventCard}>
+              <Text style={styles.eventTitle}>
+                {REPORT_TYPE_LABELS[report.content_type]} · {report.reason}
+              </Text>
+              <Text style={styles.eventMeta}>
+                {report.reporter?.first_name ?? 'A former member'} reported{' '}
+                {reported ? `${reported.first_name} ${reported.last_name}` : 'a former member'} ·{' '}
+                {dayjs(report.created_at).format('MMM D, h:mm A')}
+              </Text>
+              {report.content_snapshot ? (
+                <Text style={styles.reportQuote} numberOfLines={6}>
+                  {report.content_snapshot}
+                </Text>
+              ) : null}
+              {report.details ? <Text style={styles.eventMeta}>Note: {report.details}</Text> : null}
+              <View style={styles.eventActions}>
+                {reported && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate('UserProfile', {
+                        userId: reported.id,
+                        firstName: reported.first_name,
+                        image: reported.images.image_1,
+                      })
+                    }
+                  >
+                    <Text style={styles.action}>Profile</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={() => resolveReport(report, 'dismiss')} disabled={busy}>
+                  <Text style={[styles.action, busy && styles.actionBusy]}>Dismiss</Text>
+                </TouchableOpacity>
+                {report.content_type !== 'user' && (
+                  <TouchableOpacity onPress={() => confirmRemoveContent(report)} disabled={busy}>
+                    <Text style={[styles.action, styles.actionDanger, busy && styles.actionBusy]}>Remove Content</Text>
+                  </TouchableOpacity>
+                )}
+                {reported && reported.id !== user?.id && (
+                  <TouchableOpacity onPress={() => confirmRemoveMember(report)} disabled={busy}>
+                    <Text style={[styles.action, styles.actionDanger, busy && styles.actionBusy]}>Remove Member</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          );
+        })}
 
         <Text style={styles.sectionTitle}>Outings ({events.length})</Text>
         {eventsError ? (
@@ -257,9 +370,18 @@ const styles = StyleSheet.create({
   eventBody: { flex: 1 },
   eventTitle: { ...typography.body, fontWeight: '600' },
   eventMeta: { ...typography.caption },
+  reportQuote: {
+    ...typography.body,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
+    paddingLeft: spacing.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.border,
+  },
   eventActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    flexWrap: 'wrap',
     gap: spacing.lg,
     marginTop: spacing.sm,
     paddingTop: spacing.sm,

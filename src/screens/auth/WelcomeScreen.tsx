@@ -1,7 +1,8 @@
-import React from 'react';
-import { Image, StyleSheet, View, useWindowDimensions } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button } from '../../components/Button';
 import { colors, radii, spacing } from '../../theme';
@@ -29,6 +30,16 @@ export const WelcomeScreen = ({ navigation }: Props) => {
   const { width, height } = useWindowDimensions();
   const zoomedWidth = width * HERO_ZOOM;
   const zoomedHeight = height * HERO_ZOOM;
+  const [agreed, setAgreed] = useState(false);
+
+  // Nobody gets to sign-in or sign-up without accepting the Terms of Use (EULA) first.
+  const continueTo = (screen: 'SignIn' | 'Register') => {
+    if (!agreed) {
+      Alert.alert('Terms of Use', 'Please read and agree to the Terms of Use to continue.');
+      return;
+    }
+    navigation.navigate(screen);
+  };
 
   return (
     <View style={styles.container}>
@@ -51,18 +62,36 @@ export const WelcomeScreen = ({ navigation }: Props) => {
 
       <SafeAreaView edges={['bottom']} style={styles.content}>
         <View style={styles.actions}>
+          <View style={styles.termsRow}>
+            <TouchableOpacity
+              onPress={() => setAgreed((prev) => !prev)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: agreed }}
+              accessibilityLabel="I agree to the Terms of Use"
+            >
+              <Ionicons name={agreed ? 'checkbox' : 'square-outline'} size={26} color={colors.white} />
+            </TouchableOpacity>
+            <Text style={styles.termsText}>
+              I agree to the{' '}
+              <Text style={styles.termsLink} onPress={() => navigation.navigate('Terms')}>
+                Terms of Use (EULA)
+              </Text>
+              , including no tolerance for objectionable content or abusive behavior.
+            </Text>
+          </View>
           <Button
             title="Sign In"
             icon="log-in-outline"
             style={styles.pill}
-            onPress={() => navigation.navigate('SignIn')}
+            onPress={() => continueTo('SignIn')}
           />
           <Button
             title="Create an account"
             variant="outline"
             icon="add-circle-outline"
             style={[styles.pill, styles.spaced]}
-            onPress={() => navigation.navigate('Register')}
+            onPress={() => continueTo('Register')}
           />
         </View>
       </SafeAreaView>
@@ -75,6 +104,9 @@ const styles = StyleSheet.create({
   overlay: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '45%' },
   content: { flex: 1, justifyContent: 'flex-end' },
   actions: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm + 9, alignItems: 'center' },
+  termsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md, width: '100%' },
+  termsText: { flex: 1, color: colors.white, fontSize: 14, lineHeight: 20 },
+  termsLink: { fontWeight: '700', textDecorationLine: 'underline' },
   pill: { width: '100%', borderRadius: radii.pill },
   spaced: { marginTop: spacing.md },
 });

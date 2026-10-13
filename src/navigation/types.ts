@@ -1,5 +1,6 @@
 export type AuthStackParamList = {
   Welcome: undefined;
+  Terms: undefined;
   SignIn: undefined;
   Login: undefined;
   Register: { verifiedPhoneNumber?: string } | undefined;
@@ -23,4 +24,6 @@ export type RootStackParamList = {
   Chat: { userId: number; name: string; image?: string | null };
   GroupChat: { eventId: number; title: string; image?: string | null };
   AdminDashboard: undefined;
+  BlockedUsers: undefined;
+  Terms: undefined;
 };

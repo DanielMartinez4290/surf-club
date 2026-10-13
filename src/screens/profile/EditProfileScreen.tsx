@@ -180,6 +180,18 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
               style={styles.spaced}
             />
           )}
+          <Button
+            title="Blocked Members"
+            variant="secondary"
+            onPress={() => navigation.navigate('BlockedUsers')}
+            style={styles.spaced}
+          />
+          <Button
+            title="Terms of Use"
+            variant="secondary"
+            onPress={() => navigation.navigate('Terms')}
+            style={styles.spaced}
+          />
           <Button title="Sign Out" variant="danger" onPress={handleSignOut} style={styles.spaced} />
           <TouchableOpacity
             style={styles.deleteLink}

@@ -16,6 +16,7 @@ import {
 } from '../../api/events';
 import { toApiError } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { promptReport } from '../../utils/moderation';
 import { colors, layout, radii, spacing, typography } from '../../theme';
 import type { EventSignup, SurfEvent } from '../../types';
 
@@ -224,6 +225,17 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
             )}
             ListEmptyComponent={<Text style={styles.emptyRoster}>No one is going yet.</Text>}
           />
+
+          {!isOrganizer && (
+            <TouchableOpacity
+              style={styles.reportLink}
+              onPress={() => promptReport('event', event.id, 'Outing')}
+              accessibilityRole="button"
+            >
+              <Ionicons name="flag-outline" size={16} color={colors.slate} />
+              <Text style={styles.reportLinkText}>Report this outing</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -251,4 +263,13 @@ const styles = StyleSheet.create({
   rosterAvatarPlaceholder: {},
   rosterName: { ...typography.body, textAlign: 'center' },
   emptyRoster: { ...typography.caption },
+  reportLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    paddingVertical: spacing.md,
+    marginTop: spacing.lg,
+  },
+  reportLinkText: { ...typography.caption, fontWeight: '600' },
 });

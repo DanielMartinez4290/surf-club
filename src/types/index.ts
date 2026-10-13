@@ -26,7 +26,23 @@ export interface User {
 
 export type PublicUser = Pick<User, 'id' | 'first_name' | 'bio' | 'owner_or_rider' | 'images'> & {
   age: number | null;
+  blocked_by_me?: boolean;
 };
+
+export type ReportContentType = 'user' | 'event' | 'direct_message' | 'group_message';
+
+export interface Report {
+  id: number;
+  content_type: ReportContentType;
+  content_id: number;
+  reason: string;
+  details: string | null;
+  content_snapshot: string | null;
+  status: 'open' | 'resolved';
+  created_at: string;
+  reporter: Pick<User, 'id' | 'first_name' | 'last_name' | 'images'> | null;
+  reported_user: Pick<User, 'id' | 'first_name' | 'last_name' | 'images'> | null;
+}
 
 export interface SurfEvent {
   id: number;

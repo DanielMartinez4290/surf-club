@@ -13,6 +13,7 @@ import { GroupChatScreen } from '../screens/messages/GroupChatScreen';
 import { ChatHeaderTitle } from '../screens/messages/ChatHeaderTitle';
 import { UserProfileScreen } from '../screens/profile/UserProfileScreen';
 import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
+import { AdminLiveMapScreen } from '../screens/admin/AdminLiveMapScreen';
 import { BlockedUsersScreen } from '../screens/profile/BlockedUsersScreen';
 import { TermsScreen } from '../screens/legal/TermsScreen';
 import { LiveMapScreen } from '../screens/events/LiveMapScreen';
@@ -75,6 +76,7 @@ export const RootNavigator = () => {
           />
           <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Terms" component={TermsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="AdminLiveMap" component={AdminLiveMapScreen} options={{ title: 'Live locations' }} />
           <Stack.Screen name="LiveMap" component={LiveMapScreen} options={{ title: 'Live map' }} />
           <Stack.Screen
             name="StoryViewer"

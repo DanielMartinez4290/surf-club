@@ -12,6 +12,7 @@ import { TextField } from '../../components/TextField';
 import {
   apiAdminDeleteEvent,
   apiAdminListEvents,
+  apiAdminListLiveLocations,
   apiAdminListUsers,
   apiAdminSendMassPush,
   apiAdminTakeEventOwnership,
@@ -43,6 +44,7 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
   const [dateEvent, setDateEvent] = useState<SurfEvent | null>(null);
   const [pickedDate, setPickedDate] = useState(new Date());
   const [reports, setReports] = useState<Report[]>([]);
+  const [liveCount, setLiveCount] = useState<number | null>(null);
   const [reportsError, setReportsError] = useState<string | null>(null);
   const [busyReportId, setBusyReportId] = useState<number | null>(null);
 
@@ -70,6 +72,9 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
       apiAdminListUsers().then(setUsers).catch(() => {});
       loadEvents();
       loadReports();
+      apiAdminListLiveLocations()
+        .then((list) => setLiveCount(list.length))
+        .catch(() => setLiveCount(null));
     }, [loadEvents, loadReports])
   );
 
@@ -185,6 +190,12 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
         <Text style={styles.sectionTitle}>Send Announcement</Text>
         <TextField label="Message" value={pushMessage} onChangeText={setPushMessage} multiline numberOfLines={2} />
         <Button title="Send to All Members" onPress={handleSendPush} loading={sending} />
+
+        <Text style={styles.sectionTitle}>Live Locations{liveCount !== null ? ` (${liveCount})` : ''}</Text>
+        <Text style={styles.liveNote}>
+          Members who turned on "On my way" for an outing, while it's on. Only admins can see this map.
+        </Text>
+        <Button title="Open Live Map" variant="secondary" icon="map-outline" onPress={() => navigation.navigate('AdminLiveMap')} />
 
         <Text style={styles.sectionTitle}>Reports ({reports.length})</Text>
         {reportsError ? (
@@ -349,6 +360,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.sand },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xl },
   heading: { ...typography.title, fontSize: 22 },
+  liveNote: { ...typography.caption, marginBottom: spacing.sm },
   sectionTitle: {
     ...typography.caption,
     textTransform: 'uppercase',

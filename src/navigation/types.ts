@@ -26,6 +26,7 @@ export type RootStackParamList = {
   Chat: { userId: number; name: string; image?: string | null };
   GroupChat: { eventId: number; title: string; image?: string | null };
   AdminDashboard: undefined;
+  AdminLiveMap: undefined;
   BlockedUsers: undefined;
   Terms: undefined;
   LiveMap: { event: SurfEvent };

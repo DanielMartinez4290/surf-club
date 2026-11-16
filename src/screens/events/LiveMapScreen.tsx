@@ -18,7 +18,7 @@ const POLL_MS = 10_000;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LiveMap'>;
 
-const ago = (iso: string | null) => {
+export const ago = (iso: string | null) => {
   if (!iso) return '';
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   return minutes < 1 ? 'just now' : minutes < 60 ? `${minutes}m ago` : `${Math.floor(minutes / 60)}h ago`;
@@ -125,9 +125,9 @@ export const LiveMapScreen = ({ route }: Props) => {
             <Text style={styles.shareTitle}>On my way</Text>
             <Text style={styles.shareSubtitle}>
               {sharing
-                ? `Members of this outing can see you until ${dayjs(shareTimes.closesAt).format('h:mm A')}.`
+                ? `Members of this outing and club admins can see you until ${dayjs(shareTimes.closesAt).format('h:mm A')}.`
                 : shareTimes.isOpen
-                  ? 'Let members of this outing see where you are while you head there.'
+                  ? 'Let members of this outing and club admins see where you are while you head there.'
                   : `Opens ${SHARE_OPENS_BEFORE_HOURS} hours before the outing (${dayjs(shareTimes.opensAt).format('ddd h:mm A')}).`}
             </Text>
           </View>
@@ -168,13 +168,22 @@ export const LiveMapScreen = ({ route }: Props) => {
 };
 
 /** A member's profile photo as a map pin. Re-renders until the photo loads, then freezes for performance. */
-const AvatarMarker = ({ member }: { member: LiveMemberLocation }) => {
+export const AvatarMarker = ({
+  member,
+  subtitle,
+  onCalloutPress,
+}: {
+  member: Pick<LiveMemberLocation, 'user' | 'latitude' | 'longitude' | 'located_at'>;
+  subtitle?: string;
+  onCalloutPress?: () => void;
+}) => {
   const [loaded, setLoaded] = useState(!member.user.images.image_1);
   return (
     <Marker
       coordinate={{ latitude: member.latitude, longitude: member.longitude }}
       title={member.user.first_name}
-      description={`Updated ${ago(member.located_at)}`}
+      description={subtitle ?? `Updated ${ago(member.located_at)}`}
+      onCalloutPress={onCalloutPress}
       tracksViewChanges={!loaded}
       anchor={{ x: 0.5, y: 0.5 }}
     >

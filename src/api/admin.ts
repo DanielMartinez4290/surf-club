@@ -26,3 +26,18 @@ export const apiAdminGetSettings = () =>
 
 export const apiAdminUpdateSetting = (key: string, value: string) =>
   api.post('/api/admin/settings', { key, value }).then((r) => r.data);
+
+export interface AdminLiveLocation {
+  user: Pick<User, 'id' | 'first_name' | 'last_name' | 'images'>;
+  event: Pick<SurfEvent, 'id' | 'title' | 'location' | 'latitude' | 'longitude'>;
+  latitude: number;
+  longitude: number;
+  heading: number | null;
+  speed: number | null;
+  located_at: string | null;
+  expires_at: string;
+}
+
+/** Everyone currently sharing "On my way", across all outings (admins only). */
+export const apiAdminListLiveLocations = () =>
+  api.get<AdminLiveLocation[]>('/api/admin/live-locations').then((r) => r.data);

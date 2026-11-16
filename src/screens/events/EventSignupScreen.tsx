@@ -17,6 +17,7 @@ import {
 import { toApiError } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { promptReport } from '../../utils/moderation';
+import { getActiveShare, shareWindow, stopLiveShare } from '../../location/liveShare';
 import { colors, layout, radii, spacing, typography } from '../../theme';
 import type { EventSignup, SurfEvent } from '../../types';
 
@@ -45,6 +46,14 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
   useEffect(() => {
     load();
   }, [load]);
+
+  // Whether this phone is currently sharing "on my way" for this outing (refreshes when coming back from the map).
+  const [sharingHere, setSharingHere] = useState(false);
+  useEffect(() => {
+    const check = () => getActiveShare().then((share) => setSharingHere(share?.eventId === eventId));
+    check();
+    return navigation.addListener('focus', check);
+  }, [navigation, eventId]);
 
   const mySignup = signups.find((s) => s.user_id === user?.id);
   const isOrganizer = event?.user_id === user?.id;
@@ -94,6 +103,8 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
     if (!mySignup) return;
     try {
       await apiCancelSignup(mySignup.id);
+      // No longer going, so stop sharing "on my way" for this outing.
+      if (sharingHere) await stopLiveShare();
       await load();
     } catch (error) {
       Alert.alert('Could not cancel', toApiError(error).message);
@@ -187,6 +198,25 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
             </>
           )}
 
+          {(mySignup || isOrganizer) && (sharingHere || shareWindow(event).isOpen) && (
+            <TouchableOpacity
+              style={styles.liveCard}
+              onPress={() => navigation.navigate('LiveMap', { event })}
+              accessibilityRole="button"
+            >
+              <View style={[styles.liveIcon, sharingHere && styles.liveIconOn]}>
+                <Ionicons name="navigate" size={20} color={sharingHere ? colors.white : colors.ocean} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.liveTitle}>{sharingHere ? "You're sharing your location" : 'Live map'}</Text>
+                <Text style={styles.liveSubtitle}>
+                  {sharingHere ? 'Tap to see who else is on the way or stop sharing.' : 'See who is on the way, and share where you are.'}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.slate} />
+            </TouchableOpacity>
+          )}
+
           {(mySignup || isOrganizer) && (
             <Button
               title="Group Chat"
@@ -263,6 +293,28 @@ const styles = StyleSheet.create({
   rosterAvatarPlaceholder: {},
   rosterName: { ...typography.body, textAlign: 'center' },
   emptyRoster: { ...typography.caption },
+  liveCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  liveIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.lakeTint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  liveIconOn: { backgroundColor: colors.ocean },
+  liveTitle: { ...typography.body, fontWeight: '700' },
+  liveSubtitle: { ...typography.caption, marginTop: 2 },
   reportLink: {
     flexDirection: 'row',
     alignItems: 'center',

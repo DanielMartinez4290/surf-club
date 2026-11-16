@@ -1,3 +1,5 @@
+import type { StoryGroup, SurfEvent } from '../types';
+
 export type AuthStackParamList = {
   Welcome: undefined;
   Terms: undefined;
@@ -26,4 +28,7 @@ export type RootStackParamList = {
   AdminDashboard: undefined;
   BlockedUsers: undefined;
   Terms: undefined;
+  LiveMap: { event: SurfEvent };
+  StoryViewer: { groups: StoryGroup[]; startGroupIndex: number };
+  StoryComposer: { uri: string; mediaType: 'image' | 'video'; mimeType?: string | null };
 };

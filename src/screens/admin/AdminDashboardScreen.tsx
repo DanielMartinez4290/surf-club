@@ -29,6 +29,7 @@ const REPORT_TYPE_LABELS: Record<Report['content_type'], string> = {
   event: 'Outing',
   direct_message: 'Direct message',
   group_message: 'Group chat message',
+  story: 'Story',
 };
 
 export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {

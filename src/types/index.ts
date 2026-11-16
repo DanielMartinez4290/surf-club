@@ -29,7 +29,7 @@ export type PublicUser = Pick<User, 'id' | 'first_name' | 'bio' | 'owner_or_ride
   blocked_by_me?: boolean;
 };
 
-export type ReportContentType = 'user' | 'event' | 'direct_message' | 'group_message';
+export type ReportContentType = 'user' | 'event' | 'direct_message' | 'group_message' | 'story';
 
 export interface Report {
   id: number;
@@ -51,6 +51,8 @@ export interface SurfEvent {
   description: string;
   event_type: string;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
   picture_url: string | null;
   start_time: string;
   end_time: string | null;
@@ -90,4 +92,29 @@ export interface AppSetting {
   key: string;
   value: string;
   description: string | null;
+}
+
+export type StoryAuthor = Pick<User, 'id' | 'first_name' | 'last_name' | 'images'>;
+
+export interface StoryViewer {
+  user: StoryAuthor;
+  viewed_at: string;
+}
+
+export interface Story {
+  id: number;
+  media_url: string;
+  media_type: 'image' | 'video';
+  caption: string | null;
+  created_at: string;
+  viewed: boolean;
+  /** Only present on your own stories. */
+  viewers?: StoryViewer[];
+}
+
+export interface StoryGroup {
+  user: StoryAuthor;
+  is_mine: boolean;
+  has_unseen: boolean;
+  stories: Story[];
 }

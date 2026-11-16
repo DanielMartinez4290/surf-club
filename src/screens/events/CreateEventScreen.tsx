@@ -8,6 +8,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
+import { LocationPinPicker } from '../../components/LocationPinPicker';
+import { type Coords, geocodePlace } from '../../location/geo';
 import { apiCreateEvent, apiUploadEventPhoto } from '../../api/events';
 import { toApiError } from '../../api/client';
 import { colors, radii, spacing, typography } from '../../theme';
@@ -19,6 +21,7 @@ export const CreateEventScreen = ({ navigation }: { navigation: any }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [pin, setPin] = useState<Coords | null>(null);
   const [pictureUrl, setPictureUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [startTime, setStartTime] = useState(new Date());
@@ -55,11 +58,15 @@ export const CreateEventScreen = ({ navigation }: { navigation: any }) => {
     }
     setSaving(true);
     try {
+      // No pin dropped? Try the typed location so the outing still shows up in "near me".
+      const coords = pin ?? (await geocodePlace(location));
       await apiCreateEvent({
         title,
         description,
         event_type: EVENT_TYPE,
         location,
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
         picture_url: pictureUrl,
         start_time: dayjs(startTime).format('YYYY-MM-DD HH:mm:ss'),
         end_time: null,
@@ -99,6 +106,7 @@ export const CreateEventScreen = ({ navigation }: { navigation: any }) => {
             style={{ height: 100, textAlignVertical: 'top' }}
           />
           <TextField label="Location" value={location} onChangeText={setLocation} />
+          <LocationPinPicker place={location} value={pin} onChange={setPin} />
 
           <TouchableOpacity style={styles.dateButton} onPress={() => setShowPicker(true)}>
             <Text style={styles.dateLabel}>Date &amp; Time</Text>

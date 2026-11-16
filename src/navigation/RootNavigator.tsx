@@ -15,6 +15,9 @@ import { UserProfileScreen } from '../screens/profile/UserProfileScreen';
 import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
 import { BlockedUsersScreen } from '../screens/profile/BlockedUsersScreen';
 import { TermsScreen } from '../screens/legal/TermsScreen';
+import { LiveMapScreen } from '../screens/events/LiveMapScreen';
+import { StoryViewerScreen } from '../screens/stories/StoryViewerScreen';
+import { StoryComposerScreen } from '../screens/stories/StoryComposerScreen';
 import { useAuth } from '../context/AuthContext';
 import { useRegisterPushToken } from '../hooks/useRegisterPushToken';
 import { useDevScreenLinks } from './useDevScreenLinks';
@@ -72,6 +75,17 @@ export const RootNavigator = () => {
           />
           <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Terms" component={TermsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="LiveMap" component={LiveMapScreen} options={{ title: 'Live map' }} />
+          <Stack.Screen
+            name="StoryViewer"
+            component={StoryViewerScreen}
+            options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }}
+          />
+          <Stack.Screen
+            name="StoryComposer"
+            component={StoryComposerScreen}
+            options={{ headerShown: false, presentation: 'fullScreenModal' }}
+          />
         </Stack.Navigator>
       ) : (
         <AuthNavigator />

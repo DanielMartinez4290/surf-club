@@ -31,5 +31,9 @@ export const apiUploadImage = async (uri: string, slot: number) => {
     .then((r) => r.data);
 };
 
+/** `order[i]` is the current slot (1-6) whose photo should move to slot i + 1. */
+export const apiReorderImages = (order: number[]) =>
+  api.put<User>('/api/user/images/order', { order }).then((r) => r.data);
+
 export const apiRegisterPushToken = (expo_push_token: string) =>
   api.post('/api/user/push-token', { expo_push_token }).then((r) => r.data);

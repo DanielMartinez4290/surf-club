@@ -33,6 +33,18 @@ module.exports = {
         },
       ],
       [
+        'expo-location',
+        {
+          // Only "While Using" is ever requested. Live "on my way" sharing is started by the member
+          // in the app and keeps running while they drive (iOS shows the blue location indicator).
+          locationWhenInUsePermission:
+            'Wakesurf Club uses your location to show outings near you and, when you turn on "On my way", to show members of that outing where you are.',
+          locationAlwaysAndWhenInUsePermission:
+            'Wakesurf Club uses your location to show outings near you and, when you turn on "On my way", to show members of that outing where you are.',
+          isIosBackgroundLocationEnabled: true,
+        },
+      ],
+      [
         '@stripe/stripe-react-native',
         {
           enableGooglePay: false,

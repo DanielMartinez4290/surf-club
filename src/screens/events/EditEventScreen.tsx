@@ -9,6 +9,8 @@ import dayjs from 'dayjs';
 import { parseEventTime } from '../../utils/eventTime';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
+import { LocationPinPicker } from '../../components/LocationPinPicker';
+import { type Coords, geocodePlace } from '../../location/geo';
 import { apiDeleteEvent, apiGetEvent, apiUpdateEvent, apiUploadEventPhoto } from '../../api/events';
 import { toApiError } from '../../api/client';
 import { colors, radii, spacing, typography } from '../../theme';
@@ -22,6 +24,7 @@ export const EditEventScreen = ({ navigation, route }: { navigation: any; route:
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [pin, setPin] = useState<Coords | null>(null);
   const [pictureUrl, setPictureUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [startTime, setStartTime] = useState(new Date());
@@ -35,6 +38,7 @@ export const EditEventScreen = ({ navigation, route }: { navigation: any; route:
       setTitle(event.title);
       setDescription(event.description);
       setLocation(event.location);
+      setPin(event.latitude != null && event.longitude != null ? { latitude: event.latitude, longitude: event.longitude } : null);
       setPictureUrl(event.picture_url);
       setStartTime(parseEventTime(event.start_time).toDate());
       setNumberOfSpots(String(event.number_of_spots));
@@ -66,11 +70,15 @@ export const EditEventScreen = ({ navigation, route }: { navigation: any; route:
   const handleSave = async () => {
     setSaving(true);
     try {
+      // No pin dropped? Try the typed location so the outing still shows up in "near me".
+      const coords = pin ?? (await geocodePlace(location));
       await apiUpdateEvent(eventId, {
         title,
         description,
         event_type: EVENT_TYPE,
         location,
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
         picture_url: pictureUrl,
         start_time: dayjs(startTime).format('YYYY-MM-DD HH:mm:ss'),
         number_of_spots: parseInt(numberOfSpots, 10),
@@ -125,6 +133,7 @@ export const EditEventScreen = ({ navigation, route }: { navigation: any; route:
             style={{ height: 100, textAlignVertical: 'top' }}
           />
           <TextField label="Location" value={location} onChangeText={setLocation} />
+          <LocationPinPicker place={location} value={pin} onChange={setPin} />
 
           <TouchableOpacity style={styles.dateButton} onPress={() => setShowPicker(true)}>
             <Text style={styles.dateLabel}>Date &amp; Time</Text>

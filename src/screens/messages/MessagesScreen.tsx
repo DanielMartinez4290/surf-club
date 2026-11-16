@@ -5,20 +5,32 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import dayjs from 'dayjs';
 import { apiGetEventThreads, apiGetMessageThreads, EventThread, MessageThread } from '../../api/messages';
+import { apiGetStories } from '../../api/stories';
+import { pickStoryMedia, StoriesBar } from '../../components/StoriesBar';
+import { useAuth } from '../../context/AuthContext';
 import { colors, spacing, typography } from '../../theme';
+import type { StoryGroup } from '../../types';
 
 export const MessagesScreen = ({ navigation }: { navigation: any }) => {
   const [directThreads, setDirectThreads] = useState<MessageThread[]>([]);
   const [eventThreads, setEventThreads] = useState<EventThread[]>([]);
+  const [storyGroups, setStoryGroups] = useState<StoryGroup[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const { user } = useAuth();
 
   // The spinner only shows for pull-to-refresh; tab and focus refreshes update quietly.
   const load = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
     try {
-      const [direct, events] = await Promise.all([apiGetMessageThreads(), apiGetEventThreads()]);
+      const [direct, events, stories] = await Promise.all([
+        apiGetMessageThreads(),
+        apiGetEventThreads(),
+        // Stories are a bonus; don't let a failure there hide the message threads.
+        apiGetStories().catch(() => null),
+      ]);
       setDirectThreads(direct);
       setEventThreads(events);
+      if (stories) setStoryGroups(stories);
     } catch {
       // Keep showing the last loaded threads; the next refresh will try again.
     } finally {
@@ -54,6 +66,18 @@ export const MessagesScreen = ({ navigation }: { navigation: any }) => {
         data={sections}
         keyExtractor={(s) => s.key}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} />}
+        ListHeaderComponent={
+          user ? (
+            <StoriesBar
+              me={user}
+              groups={storyGroups}
+              onOpenGroup={(index) =>
+                navigation.navigate('StoryViewer', { groups: storyGroups, startGroupIndex: index })
+              }
+              onAddStory={() => pickStoryMedia((media) => navigation.navigate('StoryComposer', media))}
+            />
+          ) : null
+        }
         renderItem={({ item }) => (
           <View>
             <Text style={styles.sectionTitle}>{item.title}</Text>

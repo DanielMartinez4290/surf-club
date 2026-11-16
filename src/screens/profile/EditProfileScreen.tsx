@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../../components/BackButton';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { Button } from '../../components/Button';
+import { SortablePhotoGrid } from '../../components/SortablePhotoGrid';
 import { TextField } from '../../components/TextField';
-import { apiDeleteAccount, apiUpdateProfile, apiUploadImage } from '../../api/user';
+import { apiDeleteAccount, apiReorderImages, apiUpdateProfile, apiUploadImage } from '../../api/user';
 import { toApiError } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { colors, radii, spacing, typography } from '../../theme';
 import type { UserImages } from '../../types';
-
-const IMAGE_SLOTS = [1, 2, 3, 4, 5, 6] as const;
 
 export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
   const { user, refreshUser, signOut } = useAuth();
@@ -37,6 +35,7 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
   );
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [draggingPhoto, setDraggingPhoto] = useState(false);
 
   const handlePickImage = async (slot: number) => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -55,6 +54,23 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
       Alert.alert('Upload failed', toApiError(error).message);
     } finally {
       setUploadingSlot(null);
+    }
+  };
+
+  // Apply the new order right away so the grid doesn't snap back, then persist it.
+  const handleReorder = async (order: number[]) => {
+    const previous = images;
+    const reordered = Object.fromEntries(
+      order.map((fromSlot, i) => [`image_${i + 1}`, previous[`image_${fromSlot}` as keyof UserImages]])
+    ) as unknown as UserImages;
+    setImages(reordered);
+    try {
+      const updated = await apiReorderImages(order);
+      setImages(updated.images);
+      await refreshUser();
+    } catch (error) {
+      setImages(previous);
+      Alert.alert('Could not reorder photos', toApiError(error).message);
     }
   };
 
@@ -111,29 +127,17 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
     <SafeAreaView style={styles.container}>
       <BackButton />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={styles.content} scrollEnabled={!draggingPhoto}>
           <Text style={styles.heading}>Edit Profile</Text>
 
-          <View style={styles.grid}>
-            {IMAGE_SLOTS.map((slot) => {
-              const key = `image_${slot}` as keyof UserImages;
-              const uri = images[key];
-              return (
-                <TouchableOpacity
-                  key={slot}
-                  style={styles.slot}
-                  onPress={() => handlePickImage(slot)}
-                  disabled={uploadingSlot === slot}
-                >
-                  {uri ? (
-                    <Image source={{ uri }} style={styles.slotImage} contentFit="cover" />
-                  ) : (
-                    <Ionicons name="add" size={28} color={colors.slate} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <SortablePhotoGrid
+            images={images}
+            uploadingSlot={uploadingSlot}
+            onPickImage={handlePickImage}
+            onReorder={handleReorder}
+            onDragActiveChange={setDraggingPhoto}
+          />
+          <Text style={styles.gridHint}>Tap to add a photo. Hold and drag to reorder.</Text>
 
           <TextField
             label="Email"
@@ -207,8 +211,6 @@ export const EditProfileScreen = ({ navigation }: { navigation: any }) => {
   );
 };
 
-const SLOT_SIZE = 100;
-
 const styles = StyleSheet.create({
   readOnlyInput: { backgroundColor: colors.sand, color: colors.slate },
   container: { flex: 1, backgroundColor: colors.sand },
@@ -216,19 +218,7 @@ const styles = StyleSheet.create({
   heading: { ...typography.title, marginBottom: spacing.lg },
   deleteLink: { alignSelf: 'center', paddingVertical: spacing.md, marginTop: spacing.sm },
   deleteLinkText: { ...typography.body, color: colors.danger, fontWeight: '600' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
-  slot: {
-    width: SLOT_SIZE,
-    height: SLOT_SIZE,
-    borderRadius: radii.sm,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  slotImage: { width: '100%', height: '100%' },
+  gridHint: { ...typography.caption, marginTop: spacing.sm, marginBottom: spacing.lg },
   dateButton: {
     height: 50,
     borderRadius: radii.sm,

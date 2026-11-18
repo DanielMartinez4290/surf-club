@@ -6,7 +6,7 @@ import { type Coords, geocodePlace, getCurrentCoords } from '../location/geo';
 import { colors, radii, spacing, typography } from '../theme';
 
 interface Props {
-  /** The typed location name, used for "Find on map". */
+  /** The typed address (or location name if there's no address), used for "Find on map". */
   place: string;
   value: Coords | null;
   onChange: (coords: Coords | null) => void;
@@ -25,7 +25,7 @@ export const LocationPinPicker = ({ place, value, onChange }: Props) => {
 
   const find = async () => {
     if (!place.trim()) {
-      Alert.alert('Add a location first', 'Type where the outing meets, then find it on the map.');
+      Alert.alert('Add a location first', 'Type the address or location where the outing meets, then find it on the map.');
       return;
     }
     setBusy('find');

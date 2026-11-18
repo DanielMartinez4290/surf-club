@@ -51,6 +51,8 @@ export interface SurfEvent {
   description: string;
   event_type: string;
   location: string;
+  /** Street address used only to place the outing on the map; not shown on the outing itself. */
+  address: string | null;
   latitude: number | null;
   longitude: number | null;
   picture_url: string | null;

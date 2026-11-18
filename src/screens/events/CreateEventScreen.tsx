@@ -21,6 +21,7 @@ export const CreateEventScreen = ({ navigation }: { navigation: any }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [address, setAddress] = useState('');
   const [pin, setPin] = useState<Coords | null>(null);
   const [pictureUrl, setPictureUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -58,13 +59,14 @@ export const CreateEventScreen = ({ navigation }: { navigation: any }) => {
     }
     setSaving(true);
     try {
-      // No pin dropped? Try the typed location so the outing still shows up in "near me".
-      const coords = pin ?? (await geocodePlace(location));
+      // No pin dropped? Look up the address (or the location name) so the outing still shows up on the map.
+      const coords = pin ?? (await geocodePlace(address.trim() || location));
       await apiCreateEvent({
         title,
         description,
         event_type: EVENT_TYPE,
         location,
+        address: address.trim() || null,
         latitude: coords?.latitude ?? null,
         longitude: coords?.longitude ?? null,
         picture_url: pictureUrl,
@@ -106,7 +108,14 @@ export const CreateEventScreen = ({ navigation }: { navigation: any }) => {
             style={{ height: 100, textAlignVertical: 'top' }}
           />
           <TextField label="Location" value={location} onChangeText={setLocation} />
-          <LocationPinPicker place={location} value={pin} onChange={setPin} />
+          <TextField
+            label="Address (optional, only used for the map)"
+            value={address}
+            onChangeText={setAddress}
+            autoCapitalize="words"
+            textContentType="fullStreetAddress"
+          />
+          <LocationPinPicker place={address.trim() || location} value={pin} onChange={setPin} />
 
           <TouchableOpacity style={styles.dateButton} onPress={() => setShowPicker(true)}>
             <Text style={styles.dateLabel}>Date &amp; Time</Text>

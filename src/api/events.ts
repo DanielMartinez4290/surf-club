@@ -25,6 +25,7 @@ export interface CreateEventParams {
   description: string;
   event_type: string;
   location: string;
+  address: string | null;
   latitude: number | null;
   longitude: number | null;
   picture_url: string | null;

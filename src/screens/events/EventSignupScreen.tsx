@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { Alert, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -111,6 +111,27 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
     }
   };
 
+  // Show the outing's title in the header, next to the back button. With no photo to put the
+  // edit button on, the organizer's pencil goes on the right of the header instead.
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: event?.title ?? '',
+      headerRight:
+        event && isOrganizer && !event.picture_url
+          ? () => (
+              <TouchableOpacity
+                onPress={() => navigation.navigate('EditEvent', { eventId: event.id })}
+                accessibilityRole="button"
+                accessibilityLabel="Edit outing"
+                hitSlop={8}
+              >
+                <Ionicons name="pencil" size={22} color={colors.ocean} />
+              </TouchableOpacity>
+            )
+          : undefined,
+    });
+  }, [navigation, event, isOrganizer]);
+
   if (!event) return null;
 
   const isFull = signups.length >= event.number_of_spots;
@@ -134,11 +155,6 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
           </View>
         )}
         <View style={styles.content}>
-          <View style={styles.titleRow}>
-            <Text style={[styles.title, { flex: 1 }]}>{event.title}</Text>
-            {/* No photo to put the edit button on, so it sits next to the title instead. */}
-            {isOrganizer && !event.picture_url && <EditButton onPress={editOuting} />}
-          </View>
 
           {event.organizer && (
             <TouchableOpacity
@@ -293,8 +309,6 @@ const styles = StyleSheet.create({
   scroll: { width: '100%', maxWidth: layout.maxContentWidth, alignSelf: 'center' },
   image: { width: '100%', backgroundColor: colors.border },
   content: { padding: spacing.lg },
-  title: { ...typography.title, fontSize: 24 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   editButton: {
     width: 40,
     height: 40,

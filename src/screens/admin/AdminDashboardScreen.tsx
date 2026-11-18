@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { BackButton } from '../../components/BackButton';
@@ -10,12 +10,12 @@ import dayjs from 'dayjs';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
 import {
+  apiAdminChangeEventOwner,
   apiAdminDeleteEvent,
   apiAdminListEvents,
   apiAdminListLiveLocations,
   apiAdminListUsers,
   apiAdminSendMassPush,
-  apiAdminTakeEventOwnership,
   apiAdminUpdateEventDate,
 } from '../../api/admin';
 import { apiAdminListReports, apiAdminResolveReport } from '../../api/moderation';
@@ -43,6 +43,8 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [dateEvent, setDateEvent] = useState<SurfEvent | null>(null);
   const [pickedDate, setPickedDate] = useState(new Date());
+  const [ownerEvent, setOwnerEvent] = useState<SurfEvent | null>(null);
+  const [ownerSearch, setOwnerSearch] = useState('');
   const [reports, setReports] = useState<Report[]>([]);
   const [liveCount, setLiveCount] = useState<number | null>(null);
   const [reportsError, setReportsError] = useState<string | null>(null);
@@ -139,20 +141,40 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
     }
   };
 
-  const handleTakeOwnership = (event: SurfEvent) => {
+  const openOwnerPicker = (event: SurfEvent) => {
+    setOwnerSearch('');
+    setOwnerEvent(event);
+  };
+
+  const handlePickOwner = (member: User) => {
+    const event = ownerEvent;
+    if (!event) return;
+    const isMe = member.id === user?.id;
+    const name = isMe ? 'you' : `${member.first_name} ${member.last_name ?? ''}`.trim();
     Alert.alert(
-      'Make Me the Owner',
-      `Take over "${event.title}" from ${event.organizer?.first_name ?? 'its organizer'}? You'll be able to edit it and they won't.`,
+      'Change Owner',
+      `Make ${name} the owner of "${event.title}"? ${isMe ? 'You' : member.first_name} will be able to edit and cancel it, and ${event.organizer?.first_name ?? 'the current owner'} won't.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Make Me Owner',
-          onPress: () =>
-            runEventAction(event.id, () => apiAdminTakeEventOwnership(event.id), 'Could not change owner'),
+          text: 'Change Owner',
+          onPress: () => {
+            setOwnerEvent(null);
+            runEventAction(event.id, () => apiAdminChangeEventOwner(event.id, member.id), 'Could not change owner');
+          },
         },
       ]
     );
   };
+
+  // Members to choose from: you first, then everyone else, filtered by the search box. The current owner is left out.
+  const ownerCandidates = (() => {
+    const q = ownerSearch.trim().toLowerCase();
+    return users
+      .filter((u) => u.id !== ownerEvent?.user_id)
+      .filter((u) => !q || `${u.first_name} ${u.last_name ?? ''}`.toLowerCase().includes(q))
+      .sort((a, b) => (a.id === user?.id ? -1 : b.id === user?.id ? 1 : 0));
+  })();
 
   const openDatePicker = (event: SurfEvent) => {
     setPickedDate(parseEventTime(event.start_time).toDate());
@@ -290,11 +312,9 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
                 <TouchableOpacity onPress={() => openDatePicker(event)} disabled={busy}>
                   <Text style={[styles.action, busy && styles.actionBusy]}>Change Date</Text>
                 </TouchableOpacity>
-                {!isMine && (
-                  <TouchableOpacity onPress={() => handleTakeOwnership(event)} disabled={busy}>
-                    <Text style={[styles.action, busy && styles.actionBusy]}>Make Me Owner</Text>
-                  </TouchableOpacity>
-                )}
+                <TouchableOpacity onPress={() => openOwnerPicker(event)} disabled={busy}>
+                  <Text style={[styles.action, busy && styles.actionBusy]}>Change Owner</Text>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleRemoveEvent(event)} disabled={busy}>
                   <Text style={[styles.action, styles.actionDanger, busy && styles.actionBusy]}>Remove</Text>
                 </TouchableOpacity>
@@ -349,6 +369,40 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
               <Button title="Cancel" variant="secondary" onPress={() => setDateEvent(null)} style={styles.modalButton} />
               <Button title="Save" onPress={handleSaveDate} style={styles.modalButton} />
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={!!ownerEvent} transparent animationType="fade" onRequestClose={() => setOwnerEvent(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalCard, styles.ownerCard]}>
+            <Text style={styles.modalTitle} numberOfLines={1}>
+              New owner for {ownerEvent?.title}
+            </Text>
+            <TextField label="Search members" value={ownerSearch} onChangeText={setOwnerSearch} autoCorrect={false} />
+            <FlatList
+              data={ownerCandidates}
+              keyExtractor={(m) => String(m.id)}
+              keyboardShouldPersistTaps="handled"
+              style={styles.ownerList}
+              ListEmptyComponent={<Text style={styles.empty}>No members match.</Text>}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.ownerRow} onPress={() => handlePickOwner(item)}>
+                  {item.images.image_1 ? (
+                    <Image source={{ uri: item.images.image_1 }} style={styles.ownerAvatar} />
+                  ) : (
+                    <View style={[styles.ownerAvatar, styles.eventImagePlaceholder]}>
+                      <Ionicons name="person" size={18} color={colors.slate} />
+                    </View>
+                  )}
+                  <Text style={styles.ownerName} numberOfLines={1}>
+                    {item.first_name} {item.last_name ?? ''}
+                    {item.id === user?.id ? ' (you)' : ''}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+            <Button title="Cancel" variant="secondary" onPress={() => setOwnerEvent(null)} style={{ marginTop: spacing.md }} />
           </View>
         </View>
       </Modal>
@@ -415,6 +469,11 @@ const styles = StyleSheet.create({
   modalSummary: { ...typography.body, textAlign: 'center', marginTop: spacing.sm },
   modalButtons: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
   modalButton: { flex: 1 },
+  ownerCard: { maxHeight: '80%' },
+  ownerList: { flexGrow: 0 },
+  ownerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
+  ownerAvatar: { width: 36, height: 36, borderRadius: 18, overflow: 'hidden' },
+  ownerName: { ...typography.body, flex: 1 },
   memberGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   member: { width: '33.33%', alignItems: 'center', paddingVertical: spacing.sm, gap: spacing.xs },
   avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.border },

@@ -15,8 +15,9 @@ export const apiAdminDeleteEvent = (eventId: number) =>
 export const apiAdminUpdateEventDate = (eventId: number, start_time: string) =>
   api.patch<SurfEvent>(`/api/admin/events/${eventId}/date`, { start_time }).then((r) => r.data);
 
-export const apiAdminTakeEventOwnership = (eventId: number) =>
-  api.post<SurfEvent>(`/api/admin/events/${eventId}/take-ownership`).then((r) => r.data);
+/** Makes any member the outing's owner (they can then edit or cancel it). */
+export const apiAdminChangeEventOwner = (eventId: number, userId: number) =>
+  api.put<SurfEvent>(`/api/admin/events/${eventId}/owner`, { user_id: userId }).then((r) => r.data);
 
 export const apiAdminSendMassPush = (message: string) =>
   api.post('/api/admin/send-mass-push-notification', { message }).then((r) => r.data);

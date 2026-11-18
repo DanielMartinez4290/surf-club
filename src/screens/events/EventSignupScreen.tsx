@@ -114,23 +114,31 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
   if (!event) return null;
 
   const isFull = signups.length >= event.number_of_spots;
+  const editOuting = () => navigation.navigate('EditEvent', { eventId: event.id });
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.scroll}>
         {event.picture_url && (
-          <Image
-            source={{ uri: event.picture_url }}
-            style={[styles.image, { aspectRatio: imageAspectRatio }]}
-            contentFit="cover"
-            onLoad={(e) => {
-              const { width, height } = e.source;
-              if (width && height) setImageAspectRatio(width / height);
-            }}
-          />
+          <View>
+            <Image
+              source={{ uri: event.picture_url }}
+              style={[styles.image, { aspectRatio: imageAspectRatio }]}
+              contentFit="cover"
+              onLoad={(e) => {
+                const { width, height } = e.source;
+                if (width && height) setImageAspectRatio(width / height);
+              }}
+            />
+            {isOrganizer && <EditButton onPress={editOuting} style={styles.editOnImage} />}
+          </View>
         )}
         <View style={styles.content}>
-          <Text style={styles.title}>{event.title}</Text>
+          <View style={styles.titleRow}>
+            <Text style={[styles.title, { flex: 1 }]}>{event.title}</Text>
+            {/* No photo to put the edit button on, so it sits next to the title instead. */}
+            {isOrganizer && !event.picture_url && <EditButton onPress={editOuting} />}
+          </View>
 
           {event.organizer && (
             <TouchableOpacity
@@ -176,14 +184,7 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
 
           <Text style={styles.description}>{event.description}</Text>
 
-          {isOrganizer ? (
-            <Button
-              title="Edit Outing"
-              variant="secondary"
-              onPress={() => navigation.navigate('EditEvent', { eventId: event.id })}
-              style={styles.spaced}
-            />
-          ) : mySignup ? (
+          {isOrganizer ? null : mySignup ? (
             <Button title="Cancel My Spot" variant="danger" onPress={handleLeave} style={styles.spaced} />
           ) : (
             <>
@@ -196,34 +197,6 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
               />
               {!isFull && <Text style={styles.notCharged}>You will not be charged at this time.</Text>}
             </>
-          )}
-
-          {(mySignup || isOrganizer) && (sharingHere || shareWindow(event).isOpen) && (
-            <TouchableOpacity
-              style={styles.liveCard}
-              onPress={() => navigation.navigate('LiveMap', { event })}
-              accessibilityRole="button"
-            >
-              <View style={[styles.liveIcon, sharingHere && styles.liveIconOn]}>
-                <Ionicons name="navigate" size={20} color={sharingHere ? colors.white : colors.ocean} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.liveTitle}>{sharingHere ? "You're sharing your location" : 'Live map'}</Text>
-                <Text style={styles.liveSubtitle}>
-                  {sharingHere ? 'Tap to see who else is on the way or stop sharing.' : 'See who is on the way, and share where you are.'}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.slate} />
-            </TouchableOpacity>
-          )}
-
-          {(mySignup || isOrganizer) && (
-            <Button
-              title="Group Chat"
-              variant="secondary"
-              onPress={() => navigation.navigate('GroupChat', { eventId: event.id, title: event.title, image: event.picture_url })}
-              style={styles.spaced}
-            />
           )}
 
           <Text style={styles.rosterHeading}>Going</Text>
@@ -256,6 +229,34 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
             ListEmptyComponent={<Text style={styles.emptyRoster}>No one is going yet.</Text>}
           />
 
+          {(mySignup || isOrganizer) && (sharingHere || shareWindow(event).isOpen) && (
+            <TouchableOpacity
+              style={styles.liveCard}
+              onPress={() => navigation.navigate('LiveMap', { event })}
+              accessibilityRole="button"
+            >
+              <View style={[styles.liveIcon, sharingHere && styles.liveIconOn]}>
+                <Ionicons name="navigate" size={20} color={sharingHere ? colors.white : colors.ocean} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.liveTitle}>{sharingHere ? "You're sharing your location" : 'Live map'}</Text>
+                <Text style={styles.liveSubtitle}>
+                  {sharingHere ? 'Tap to see who else is on the way or stop sharing.' : 'See who is on the way, and share where you are.'}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.slate} />
+            </TouchableOpacity>
+          )}
+
+          {(mySignup || isOrganizer) && (
+            <Button
+              title="Group Chat"
+              variant="secondary"
+              onPress={() => navigation.navigate('GroupChat', { eventId: event.id, title: event.title, image: event.picture_url })}
+              style={styles.spaced}
+            />
+          )}
+
           {!isOrganizer && (
             <TouchableOpacity
               style={styles.reportLink}
@@ -272,12 +273,35 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
   );
 };
 
+/** Round pencil button for the organizer to edit the outing. */
+const EditButton = ({ onPress, style }: { onPress: () => void; style?: object }) => (
+  <TouchableOpacity
+    style={[styles.editButton, style]}
+    onPress={onPress}
+    accessibilityRole="button"
+    accessibilityLabel="Edit outing"
+    hitSlop={8}
+  >
+    <Ionicons name="pencil" size={18} color={colors.white} />
+  </TouchableOpacity>
+);
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.sand },
   scroll: { width: '100%', maxWidth: layout.maxContentWidth, alignSelf: 'center' },
   image: { width: '100%', backgroundColor: colors.border },
   content: { padding: spacing.lg },
   title: { ...typography.title, fontSize: 24 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  editButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editOnImage: { position: 'absolute', top: spacing.md, right: spacing.md },
   organizerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.md, marginBottom: spacing.sm },
   organizerAvatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.border },
   organizerText: { ...typography.caption },

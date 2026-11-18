@@ -184,9 +184,7 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
 
           <Text style={styles.description}>{event.description}</Text>
 
-          {isOrganizer ? null : mySignup ? (
-            <Button title="Cancel My Spot" variant="danger" onPress={handleLeave} style={styles.spaced} />
-          ) : (
+          {!isOrganizer && !mySignup && (
             <>
               <Button
                 title={isFull ? 'Outing Full' : "I'm Going"}
@@ -255,6 +253,10 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
               onPress={() => navigation.navigate('GroupChat', { eventId: event.id, title: event.title, image: event.picture_url })}
               style={styles.spaced}
             />
+          )}
+
+          {mySignup && !isOrganizer && (
+            <Button title="Cancel My Spot" variant="danger" onPress={handleLeave} style={styles.spaced} />
           )}
 
           {!isOrganizer && (

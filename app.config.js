@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: 'Wakesurf Club',
     slug: 'surf-club-atx',
-    version: '1.1.1',
+    version: '1.1.2',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',

@@ -9,7 +9,9 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
+import { apiGetEventSignups } from '../../api/events';
 import {
+  apiAdminAddEventSignup,
   apiAdminChangeEventOwner,
   apiAdminDeleteEvent,
   apiAdminListEvents,
@@ -43,7 +45,10 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [dateEvent, setDateEvent] = useState<SurfEvent | null>(null);
   const [pickedDate, setPickedDate] = useState(new Date());
+  // One member picker, used both for Change Owner and Add Going.
   const [ownerEvent, setOwnerEvent] = useState<SurfEvent | null>(null);
+  const [pickerMode, setPickerMode] = useState<'owner' | 'going'>('owner');
+  const [goingIds, setGoingIds] = useState<number[] | null>(null);
   const [ownerSearch, setOwnerSearch] = useState('');
   const [reports, setReports] = useState<Report[]>([]);
   const [liveCount, setLiveCount] = useState<number | null>(null);
@@ -142,13 +147,42 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
   };
 
   const openOwnerPicker = (event: SurfEvent) => {
+    setPickerMode('owner');
     setOwnerSearch('');
     setOwnerEvent(event);
+  };
+
+  const openGoingPicker = (event: SurfEvent) => {
+    setPickerMode('going');
+    setOwnerSearch('');
+    setGoingIds(null);
+    setOwnerEvent(event);
+    // Leave out people who are already going.
+    apiGetEventSignups(event.id)
+      .then((list) => setGoingIds(list.map((s) => s.user_id)))
+      .catch(() => setGoingIds([]));
+  };
+
+  const handlePickGoing = (member: User) => {
+    const event = ownerEvent;
+    if (!event) return;
+    const name = member.id === user?.id ? 'yourself' : `${member.first_name} ${member.last_name ?? ''}`.trim();
+    Alert.alert('Add Going', `Add ${name} as going to "${event.title}"? They'll get a notification.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Add',
+        onPress: () => {
+          setOwnerEvent(null);
+          runEventAction(event.id, () => apiAdminAddEventSignup(event.id, member.id), 'Could not add member');
+        },
+      },
+    ]);
   };
 
   const handlePickOwner = (member: User) => {
     const event = ownerEvent;
     if (!event) return;
+    if (pickerMode === 'going') return handlePickGoing(member);
     const isMe = member.id === user?.id;
     const name = isMe ? 'you' : `${member.first_name} ${member.last_name ?? ''}`.trim();
     Alert.alert(
@@ -171,7 +205,7 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
   const ownerCandidates = (() => {
     const q = ownerSearch.trim().toLowerCase();
     return users
-      .filter((u) => u.id !== ownerEvent?.user_id)
+      .filter((u) => (pickerMode === 'owner' ? u.id !== ownerEvent?.user_id : !goingIds?.includes(u.id)))
       .filter((u) => !q || `${u.first_name} ${u.last_name ?? ''}`.toLowerCase().includes(q))
       .sort((a, b) => (a.id === user?.id ? -1 : b.id === user?.id ? 1 : 0));
   })();
@@ -315,6 +349,9 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
                 <TouchableOpacity onPress={() => openOwnerPicker(event)} disabled={busy}>
                   <Text style={[styles.action, busy && styles.actionBusy]}>Change Owner</Text>
                 </TouchableOpacity>
+                <TouchableOpacity onPress={() => openGoingPicker(event)} disabled={busy}>
+                  <Text style={[styles.action, busy && styles.actionBusy]}>Add Going</Text>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleRemoveEvent(event)} disabled={busy}>
                   <Text style={[styles.action, styles.actionDanger, busy && styles.actionBusy]}>Remove</Text>
                 </TouchableOpacity>
@@ -377,15 +414,17 @@ export const AdminDashboardScreen = ({ navigation }: { navigation: any }) => {
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, styles.ownerCard]}>
             <Text style={styles.modalTitle} numberOfLines={1}>
-              New owner for {ownerEvent?.title}
+              {pickerMode === 'owner' ? 'New owner for' : 'Add going to'} {ownerEvent?.title}
             </Text>
             <TextField label="Search members" value={ownerSearch} onChangeText={setOwnerSearch} autoCorrect={false} />
             <FlatList
-              data={ownerCandidates}
+              data={pickerMode === 'going' && goingIds === null ? [] : ownerCandidates}
               keyExtractor={(m) => String(m.id)}
               keyboardShouldPersistTaps="handled"
               style={styles.ownerList}
-              ListEmptyComponent={<Text style={styles.empty}>No members match.</Text>}
+              ListEmptyComponent={
+                <Text style={styles.empty}>{pickerMode === 'going' && goingIds === null ? 'Loading…' : 'No members match.'}</Text>
+              }
               renderItem={({ item }) => (
                 <TouchableOpacity style={styles.ownerRow} onPress={() => handlePickOwner(item)}>
                   {item.images.image_1 ? (
@@ -449,7 +488,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     flexWrap: 'wrap',
-    gap: spacing.lg,
+    gap: spacing.md, // four actions, keep them on one line
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,

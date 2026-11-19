@@ -23,6 +23,9 @@ import type { EventSignup, SurfEvent } from '../../types';
 
 /** Share of the outing photo's height trimmed off the top, and again off the bottom. */
 const IMAGE_TRIM = 0.1;
+/** How far the host/details row and the Going roster sit in from the page's left edge. */
+const INDENT = 12;
+const ROSTER_AVATAR = 88;
 
 export const EventSignupScreen = ({ navigation, route }: { navigation: any; route: any }) => {
   const { eventId } = route.params;
@@ -36,6 +39,8 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
   // has nothing to crop — organizers upload photos of all shapes, and a
   // fixed height was cropping into them unpredictably.
   const [imageAspectRatio, setImageAspectRatio] = useState(16 / 9);
+  // Width of the host/details row (same as the Going grid), so the details can line up with its second column.
+  const [summaryWidth, setSummaryWidth] = useState(0);
 
   const load = useCallback(async () => {
     const [eventData, signupData] = await Promise.all([
@@ -138,6 +143,15 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
   if (!event) return null;
 
   const isFull = signups.length >= event.number_of_spots;
+  // Going list with the outing's owner always first (shown even if they never tapped I'm Going),
+  // then everyone else in signup order. Display only: spots taken still counts real signups.
+  const ownerSignup = signups.find((s) => s.user_id === event.user_id);
+  const ownerEntry: EventSignup | null =
+    ownerSignup ??
+    (event.organizer
+      ? { id: -event.user_id, event_id: event.id, user_id: event.user_id, created_at: '', user: event.organizer }
+      : null);
+  const roster = [...(ownerEntry ? [ownerEntry] : []), ...signups.filter((s) => s.user_id !== event.user_id)];
   const editOuting = () => navigation.navigate('EditEvent', { eventId: event.id });
 
   return (
@@ -161,7 +175,7 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
         <View style={styles.content}>
 
           {/* Host on the left, outing details on the right, to keep the page short. */}
-          <View style={styles.summaryRow}>
+          <View style={styles.summaryRow} onLayout={(e) => setSummaryWidth(e.nativeEvent.layout.width)}>
             {event.organizer && (
               <TouchableOpacity
                 style={styles.organizer}
@@ -185,7 +199,13 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
               </TouchableOpacity>
             )}
 
-            <View style={styles.details}>
+            {/* Start the details where the second Going photo starts: one column in, plus that photo's side margin. */}
+            <View
+              style={[
+                styles.details,
+                summaryWidth > 0 && { paddingLeft: Math.max(0, (summaryWidth / 3 - ROSTER_AVATAR) / 2) },
+              ]}
+            >
               <View style={styles.metaRow}>
                 <Ionicons name="calendar-outline" size={16} color={colors.ocean} />
                 <Text style={styles.metaText}>{parseEventTime(event.start_time).format('ddd, MMM D · h:mm A')}</Text>
@@ -224,7 +244,8 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
 
           <Text style={styles.rosterHeading}>Going</Text>
           <FlatList
-            data={signups}
+            style={styles.indented}
+            data={roster}
             keyExtractor={(item) => String(item.id)}
             scrollEnabled={false}
             numColumns={3}
@@ -327,20 +348,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   editOnImage: { position: 'absolute', top: spacing.md, right: spacing.md },
-  summaryRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  organizer: { alignItems: 'center', width: 84 },
-  organizerAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.border },
+  // Host, details, and the Going roster sit a little in from the page edge.
+  indented: { marginLeft: INDENT },
+  // Laid out on the same three columns as the Going grid: host centered over the first photo, details from the second.
+  summaryRow: { flexDirection: 'row', alignItems: 'flex-start', marginLeft: INDENT },
+  organizer: { alignItems: 'center', width: '33.33%' },
+  organizerAvatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: colors.border },
   organizerText: { ...typography.caption, marginTop: spacing.xs },
   organizerName: { ...typography.body, fontWeight: '700' },
-  details: { flex: 1, gap: spacing.xs },
+  // Line the details up with the host photo (same height), not the photo plus the name under it.
+  details: { flex: 1, gap: spacing.xs, minHeight: 100, justifyContent: 'center' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   metaText: { ...typography.body, color: colors.slate, flex: 1 },
-  description: { ...typography.body, marginTop: spacing.md },
+  description: { ...typography.body, marginTop: spacing.md, marginLeft: INDENT },
   spaced: { marginTop: spacing.md },
   notCharged: { ...typography.caption, textAlign: 'center', marginTop: spacing.xs },
-  rosterHeading: { ...typography.heading, marginTop: spacing.lg, marginBottom: spacing.sm },
+  rosterHeading: { ...typography.heading, marginTop: spacing.lg, marginBottom: spacing.sm, marginLeft: INDENT },
   rosterRow: { width: '33.33%', alignItems: 'center', paddingVertical: spacing.sm, gap: spacing.xs },
-  rosterAvatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.border },
+  rosterAvatar: { width: ROSTER_AVATAR, height: ROSTER_AVATAR, borderRadius: ROSTER_AVATAR / 2, backgroundColor: colors.border },
   rosterAvatarPlaceholder: {},
   rosterName: { ...typography.body, textAlign: 'center' },
   emptyRoster: { ...typography.caption },

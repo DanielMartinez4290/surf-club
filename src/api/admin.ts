@@ -19,6 +19,10 @@ export const apiAdminUpdateEventDate = (eventId: number, start_time: string) =>
 export const apiAdminChangeEventOwner = (eventId: number, userId: number) =>
   api.put<SurfEvent>(`/api/admin/events/${eventId}/owner`, { user_id: userId }).then((r) => r.data);
 
+/** Signs a member up for an outing ("going") on their behalf. */
+export const apiAdminAddEventSignup = (eventId: number, userId: number) =>
+  api.post(`/api/admin/events/${eventId}/signups`, { user_id: userId }).then((r) => r.data);
+
 export const apiAdminSendMassPush = (message: string) =>
   api.post('/api/admin/send-mass-push-notification', { message }).then((r) => r.data);
 

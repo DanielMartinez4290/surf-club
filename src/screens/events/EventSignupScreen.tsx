@@ -21,6 +21,9 @@ import { getActiveShare, shareWindow, stopLiveShare } from '../../location/liveS
 import { colors, layout, radii, spacing, typography } from '../../theme';
 import type { EventSignup, SurfEvent } from '../../types';
 
+/** Share of the outing photo's height trimmed off the top, and again off the bottom. */
+const IMAGE_TRIM = 0.1;
+
 export const EventSignupScreen = ({ navigation, route }: { navigation: any; route: any }) => {
   const { eventId } = route.params;
   const { user } = useAuth();
@@ -144,7 +147,8 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
           <View>
             <Image
               source={{ uri: event.picture_url }}
-              style={[styles.image, { aspectRatio: imageAspectRatio }]}
+              // Trim 10% off the top and bottom (cover crops evenly) to leave more room for the details.
+              style={[styles.image, { aspectRatio: imageAspectRatio / (1 - 2 * IMAGE_TRIM) }]}
               contentFit="cover"
               onLoad={(e) => {
                 const { width, height } = e.source;
@@ -156,46 +160,51 @@ export const EventSignupScreen = ({ navigation, route }: { navigation: any; rout
         )}
         <View style={styles.content}>
 
-          {event.organizer && (
-            <TouchableOpacity
-              style={styles.organizerRow}
-              onPress={() =>
-                navigation.navigate('UserProfile', {
-                  userId: event.organizer!.id,
-                  firstName: event.organizer!.first_name,
-                  image: event.organizer!.images.image_1,
-                })
-              }
-            >
-              {event.organizer.images.image_1 ? (
-                <Image source={{ uri: event.organizer.images.image_1 }} style={styles.organizerAvatar} />
-              ) : (
-                <View style={styles.organizerAvatar} />
-              )}
-              <Text style={styles.organizerText}>
-                Hosted by{'\n'}
-                <Text style={styles.organizerName}>{event.organizer.first_name}</Text>
-              </Text>
-            </TouchableOpacity>
-          )}
+          {/* Host on the left, outing details on the right, to keep the page short. */}
+          <View style={styles.summaryRow}>
+            {event.organizer && (
+              <TouchableOpacity
+                style={styles.organizer}
+                onPress={() =>
+                  navigation.navigate('UserProfile', {
+                    userId: event.organizer!.id,
+                    firstName: event.organizer!.first_name,
+                    image: event.organizer!.images.image_1,
+                  })
+                }
+              >
+                {event.organizer.images.image_1 ? (
+                  <Image source={{ uri: event.organizer.images.image_1 }} style={styles.organizerAvatar} />
+                ) : (
+                  <View style={styles.organizerAvatar} />
+                )}
+                <Text style={styles.organizerText}>Hosted by</Text>
+                <Text style={styles.organizerName} numberOfLines={1}>
+                  {event.organizer.first_name}
+                </Text>
+              </TouchableOpacity>
+            )}
 
-          <View style={styles.metaRow}>
-            <Ionicons name="calendar-outline" size={16} color={colors.ocean} />
-            <Text style={styles.metaText}>{parseEventTime(event.start_time).format('dddd, MMM D · h:mm A')}</Text>
-          </View>
-          <View style={styles.metaRow}>
-            <Ionicons name="location-outline" size={16} color={colors.ocean} />
-            <Text style={styles.metaText}>{event.location}</Text>
-          </View>
-          <View style={styles.metaRow}>
-            <Ionicons name="people-outline" size={16} color={colors.ocean} />
-            <Text style={styles.metaText}>
-              {signups.length}/{event.number_of_spots} spots taken
-            </Text>
-          </View>
-          <View style={styles.metaRow}>
-            <Ionicons name="cash-outline" size={16} color={colors.ocean} />
-            <Text style={styles.metaText}>{event.price > 0 ? `$${event.price} per person` : 'Free'}</Text>
+            <View style={styles.details}>
+              <View style={styles.metaRow}>
+                <Ionicons name="calendar-outline" size={16} color={colors.ocean} />
+                <Text style={styles.metaText}>{parseEventTime(event.start_time).format('ddd, MMM D · h:mm A')}</Text>
+              </View>
+              <View style={styles.metaRow}>
+                <Ionicons name="location-outline" size={16} color={colors.ocean} />
+                <Text style={styles.metaText}>{event.location}</Text>
+              </View>
+              <View style={styles.metaRow}>
+                <Ionicons name="people-outline" size={16} color={colors.ocean} />
+                <Text style={styles.metaText}>
+                  {signups.length}/{event.number_of_spots} spots taken
+                </Text>
+              </View>
+              <View style={styles.metaRow}>
+                <Ionicons name="cash-outline" size={16} color={colors.ocean} />
+                <Text style={styles.metaText}>{event.price > 0 ? `$${event.price} per person` : 'Free'}</Text>
+              </View>
+            </View>
           </View>
 
           <Text style={styles.description}>{event.description}</Text>
@@ -308,7 +317,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.sand },
   scroll: { width: '100%', maxWidth: layout.maxContentWidth, alignSelf: 'center' },
   image: { width: '100%', backgroundColor: colors.border },
-  content: { padding: spacing.lg },
+  content: { padding: spacing.lg, paddingTop: spacing.md },
   editButton: {
     width: 40,
     height: 40,
@@ -318,12 +327,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   editOnImage: { position: 'absolute', top: spacing.md, right: spacing.md },
-  organizerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.md, marginBottom: spacing.sm },
-  organizerAvatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.border },
-  organizerText: { ...typography.caption },
-  organizerName: { ...typography.heading },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.xs },
-  metaText: { ...typography.body, color: colors.slate },
+  summaryRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  organizer: { alignItems: 'center', width: 84 },
+  organizerAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.border },
+  organizerText: { ...typography.caption, marginTop: spacing.xs },
+  organizerName: { ...typography.body, fontWeight: '700' },
+  details: { flex: 1, gap: spacing.xs },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  metaText: { ...typography.body, color: colors.slate, flex: 1 },
   description: { ...typography.body, marginTop: spacing.md },
   spaced: { marginTop: spacing.md },
   notCharged: { ...typography.caption, textAlign: 'center', marginTop: spacing.xs },

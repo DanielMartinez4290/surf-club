@@ -18,7 +18,7 @@ const STORE_KEY = 'live_location_share';
 const MIN_SEND_INTERVAL_MS = 10_000;
 
 /** Sharing opens this long before an outing starts... */
-export const SHARE_OPENS_BEFORE_HOURS = 3;
+export const SHARE_OPENS_BEFORE_HOURS = 6;
 /** ...and shuts off this long after it starts. */
 export const SHARE_CLOSES_AFTER_HOURS = 2;
 

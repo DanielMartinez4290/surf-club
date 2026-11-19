@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { api } from './client';
 import type { EventSignup, SurfEvent } from '../types';
 
@@ -15,7 +16,9 @@ export const apiUploadEventPhoto = async (uri: string) => {
     .then((r) => r.data);
 };
 
-export const apiGetEvents = () => api.get<SurfEvent[]>('/api/events').then((r) => r.data);
+// Outing times are local clock times, so the server needs the phone's local date to know what "today" is.
+export const apiGetEvents = () =>
+  api.get<SurfEvent[]>('/api/events', { params: { today: dayjs().format('YYYY-MM-DD') } }).then((r) => r.data);
 
 export const apiGetEvent = (id: number) =>
   api.get<SurfEvent>(`/api/events/${id}`).then((r) => r.data);
